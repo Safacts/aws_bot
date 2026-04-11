@@ -179,14 +179,28 @@ async def receive_poll_answer(update: Update, context: ContextTypes.DEFAULT_TYPE
     await asyncio.sleep(2)
     await ask_next_question(chat_id, user_id, context)
 
+async def error_handler(update: object, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Log the error and send a telegram message to notify the developer."""
+    logger.error("Exception while handling an update:", exc_info=context.error)
+    if isinstance(update, Update) and update.effective_chat:
+        await context.bot.send_message(
+            chat_id=update.effective_chat.id,
+            text="⚠️ An internal error occurred. Our engineers have been notified. Please try again later."
+        )
+
+async def post_init(application) -> None:
+    """Initializes the database within the application's event loop."""
+    await init_db()
+    logger.info("Database initialization complete in post_init.")
+
 if __name__ == '__main__':
-    import asyncio
-    
-    # Initialize DB schema before Bot polling starts
-    asyncio.run(init_db())
-    
-    # Build Telegram App
-    application = ApplicationBuilder().token(BOT_TOKEN).build()
+    # Build Telegram App with post_init hook
+    application = (
+        ApplicationBuilder()
+        .token(BOT_TOKEN)
+        .post_init(post_init)
+        .build()
+    )
     
     # Track polls in bot_data memory
     if "bot_data" not in application.bot_data:
@@ -194,6 +208,7 @@ if __name__ == '__main__':
 
     application.add_handler(CommandHandler('start', start))
     application.add_handler(PollHandler(receive_poll_answer))
+    application.add_error_handler(error_handler)
     
     logger.info("Starting bot...")
     application.run_polling()
