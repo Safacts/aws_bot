@@ -58,10 +58,9 @@ async def ask_next_question(chat_id: int, user_id: int, context: ContextTypes.DE
         
         # Track the active poll and store explanation for later delivery
         context.bot_data[poll_message.poll.id] = {
-            "chat_id": chat_id,
+            "explanation": explanation,
             "user_id": user_id,
-            "correct_option_id": question_data["correct_index"],
-            "explanation": explanation
+            "correct_option_id": question_data["correct_index"]
         }
         
         # Delete processing message
@@ -106,16 +105,15 @@ async def receive_poll_answer(update: Update, context: ContextTypes.DEFAULT_TYPE
     answer = update.poll_answer
     poll_id = answer.poll_id
     
-    poll_data = context.bot_data.get(poll_id)
-    if not poll_data:
+    stored_data = context.bot_data.get(poll_id)
+    if not stored_data:
         # Unknown poll
         return
         
     user_id = answer.user.id
-    chat_id = poll_data["chat_id"]
-    explanation = poll_data.get("explanation", "No explanation available.")
+    explanation = stored_data.get("explanation", "No explanation available.")
     selected_option = answer.option_ids[0]
-    is_correct = (selected_option == poll_data["correct_option_id"])
+    is_correct = (selected_option == stored_data["correct_option_id"])
     
     user = await get_or_create_user(user_id)
     
@@ -123,7 +121,7 @@ async def receive_poll_answer(update: Update, context: ContextTypes.DEFAULT_TYPE
     del context.bot_data[poll_id]
     
     await context.bot.send_message(
-        chat_id=chat_id,
+        chat_id=stored_data["user_id"],
         text=f"💡 **Explanation:**\n{explanation}",
         parse_mode="Markdown"
     )
