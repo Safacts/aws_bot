@@ -1,6 +1,7 @@
 import json
 import logging
 import re
+import random
 from typing import Dict, Any
 
 from langchain_google_genai import ChatGoogleGenerativeAI, GoogleGenerativeAIEmbeddings
@@ -39,32 +40,37 @@ class HybridRAGRouter:
         # Using standard model naming; local chroma_db dir must exist
         self.embeddings = GoogleGenerativeAIEmbeddings(model="models/embedding-001", google_api_key=GEMINI_API_KEY)
         self.vectorstore = Chroma(persist_directory="./chroma_db", embedding_function=self.embeddings)
-        self.retriever = self.vectorstore.as_retriever(search_kwargs={"k": 2})
+        # Fetching more chunks to allow for randomization later
+        self.retriever = self.vectorstore.as_retriever(search_kwargs={"k": 10})
 
         # LLMs
         self.gemini = ChatGoogleGenerativeAI(
-            model="gemini-1.5-flash", 
+            model="gemini-1.5-flash-latest", 
             google_api_key=GEMINI_API_KEY,
-            temperature=0.2
+            temperature=0.8
         )
         self.ollama = ChatOllama(
             model="llama3.2:latest", 
             base_url=OLLAMA_BASE_URL,
-            temperature=0.2
+            temperature=0.8
         )
         
         # System prompts
         self.quiz_prompt = PromptTemplate.from_template(
-            "You are a Senior AWS Cloud Practitioner Tutor. "
-            "Context from documentation:\n{context}\n\n"
+            "You are a Senior AWS Lead Architect and Tutor for the AWS Certified Cloud Practitioner (CLF-C02) exam. "
+            "Context from curriculum documentation:\n{context}\n\n"
             "Task: Generate ONE multiple-choice quiz question for the domain: {domain}.\n"
-            "Note: If the context above is empty or unavailable, use your internal trained knowledge of AWS best practices.\n"
+            "CRITICAL CONSTRAINTS:\n"
+            "1. DIFFICULTY: The question MUST match the exact difficulty and trickiness of the real CLF-C02 exam.\n"
+            "2. DISTRACTORS: Use high-quality, plausible distractors. Avoid obviously wrong answers. Incorrect options should look nearly correct to someone who hasn't fully mastered the concept.\n"
+            "3. RANDOMIZATION: Select a RANDOM concept or scenario from the provided context chunks. DO NOT repeat the same obvious concepts. Search for nuanced details in the context.\n"
+            "4. NO CONTEXT: If the context is empty, use your vast internal knowledge to create a professional CLF-C02 question.\n\n"
             "Output response ONLY as a valid JSON object:\n"
             "{{\n"
             "  \"question\": \"...\",\n"
             "  \"options\": [\"...\", \"...\", \"...\", \"...\"],\n"
             "  \"correct_index\": <0-3>,\n"
-            "  \"explanation\": \"...\"\n"
+            "  \"explanation\": \"Provide a detailed, expert-level explanation of why the correct answer is right and why the distractors are wrong.\"\n"
             "}}"
         )
         
@@ -77,7 +83,7 @@ class HybridRAGRouter:
     async def _invoke_with_fallback(self, prompt_text: str) -> str:
         """Invokes Gemini primarily, with seamless fallback to local Ollama."""
         try:
-            logger.info("Attempting inference with Gemini...")
+            logger.info("Attempting inference with Gemini (flash-latest)...")
             response = await self.gemini.ainvoke(prompt_text)
             return response.content
         except Exception as e:
@@ -90,17 +96,21 @@ class HybridRAGRouter:
                 raise
 
     async def generate_question(self, domain: str) -> Dict[str, Any]:
-        """Orchestrates RAG retrieval and question generation with multiple fail-safes."""
+        """Orchestrates RAG retrieval and question generation with shuffle-and-sample fail-safes."""
         context = ""
         try:
-            # 1. Attempt RAG Retrieval
-            docs = self.retriever.invoke(domain)
-            context = "\n\n".join([d.page_content for d in docs])
-            logger.info(f"Retrieved {len(docs)} knowledge chunks for {domain}.")
+            # 1. Retrieve top 10 chunks
+            all_docs = self.retriever.invoke(domain)
+            
+            # 2. Shuffle and pick top 3 for variety
+            random.shuffle(all_docs)
+            selected_docs = all_docs[:3]
+            
+            context = "\n\n".join([d.page_content for d in selected_docs])
+            logger.info(f"Sampled 3/10 random chunks for {domain}.")
         except Exception as rag_err:
-            # 2. Fallback to No-Context if Embedding API or DB fails
-            logger.error(f"RAG Retrieval failed (possible API/model error): {rag_err}. Falling back to No-Context mode.")
-            context = "NO DOCUMENTATION CONTEXT AVAILABLE. Proceeding with general knowledge."
+            logger.error(f"RAG Retrieval failed: {rag_err}. Proceeding with internal knowledge.")
+            context = "NO DOCUMENTATION CONTEXT AVAILABLE."
 
         # 3. Generate content using LLM (with its own fallback)
         prompt_text = self.quiz_prompt.format(domain=domain, context=context)

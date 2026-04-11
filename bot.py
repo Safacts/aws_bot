@@ -181,6 +181,29 @@ async def receive_poll_answer(update: Update, context: ContextTypes.DEFAULT_TYPE
     await asyncio.sleep(2)
     await ask_next_question(chat_id, user_id, context)
 
+async def next_topic(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Manually advances the user to the next AWS domain."""
+    user_id = update.effective_user.id
+    chat_id = update.effective_chat.id
+    
+    user = await get_or_create_user(user_id)
+    
+    # Increment and wrap around
+    user.current_topic_index = (user.current_topic_index + 1) % len(AWS_DOMAINS)
+    user.current_correct_streak = 0
+    user.current_wrong_streak = 0
+    
+    await save_user(user)
+    
+    new_domain = AWS_DOMAINS[user.current_topic_index]
+    await context.bot.send_message(
+        chat_id=chat_id,
+        text=f"⏩ **Skipping to next topic:** {new_domain}",
+        parse_mode="Markdown"
+    )
+    
+    await ask_next_question(chat_id, user_id, context)
+
 async def error_handler(update: object, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Log the error and send a telegram message to notify the developer."""
     logger.error("Exception while handling an update:", exc_info=context.error)
@@ -209,6 +232,7 @@ if __name__ == '__main__':
         application.bot_data = {}
 
     application.add_handler(CommandHandler('start', start))
+    application.add_handler(CommandHandler('next', next_topic))
     application.add_handler(PollHandler(receive_poll_answer))
     application.add_error_handler(error_handler)
     
