@@ -211,4 +211,4 @@ if __name__ == '__main__':
     application.add_error_handler(error_handler)
     
     logger.info("Starting bot...")
-    application.run_polling()
+    application.run_polling(allowed_updates=["message", "poll_answer", "poll", "callback_query"])
