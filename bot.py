@@ -39,7 +39,9 @@ async def ask_next_question(chat_id: int, user_id: int, context: ContextTypes.DE
         chat_id=chat_id, 
         text=f"🧠 Generating a question for *{current_domain}*...", 
         parse_mode="Markdown"
-     try:
+    )
+
+    try:
         # LLM RAG Question Generation
         question_data = await rag_router.generate_question(current_domain)
         explanation = question_data.get("explanation", "No explanation provided.")
@@ -177,7 +179,7 @@ async def receive_poll_answer(update: Update, context: ContextTypes.DEFAULT_TYPE
     # Wait asynchronously before firing next question
     import asyncio
     await asyncio.sleep(2)
-    await ask_next_question(chat_id, user_id, context)t_id, user_id, context)
+    await ask_next_question(chat_id, user_id, context)
 
 async def error_handler(update: object, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Log the error and send a telegram message to notify the developer."""
