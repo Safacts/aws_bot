@@ -1,0 +1,49 @@
+version: '3.8'
+
+x-common-env: &common-env
+  BOT_TOKEN: ${BOT_TOKEN}
+  GEMINI_API_KEY: ${GEMINI_API_KEY}
+  DATABASE_URL: "postgresql+asyncpg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@aws_tutor_db:5432/${POSTGRES_DB}"
+  OLLAMA_BASE_URL: "http://sakhi_engine:11434"
+
+services:
+  bot:
+    build: .
+    container_name: aws_tutor_bot
+    depends_on:
+      aws_tutor_db:
+        condition: service_healthy
+    env_file:
+      - .env
+    environment:
+      <<: *common-env
+    volumes:
+      - ./chroma_db:/app/chroma_db
+    networks:
+      - shared_net
+    restart: unless-stopped
+
+  aws_tutor_db:
+    image: postgres:15-alpine
+    container_name: aws_tutor_db
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-aws_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-aws_pass}
+      POSTGRES_DB: ${POSTGRES_DB:-aws_tutor}
+    volumes:
+      - aws_tutor_pgdata:/var/lib/postgresql/data
+    networks:
+      - shared_net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-aws_user} -d ${POSTGRES_DB:-aws_tutor}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+volumes:
+  aws_tutor_pgdata:
+
+networks:
+  shared_net:
+    external: true

@@ -1,0 +1,17 @@
+# virtual environment
+venv/
+env/
+.venv/
+
+# sensitive info
+.env
+*.pem
+
+# chroma
+chroma_db/
+*.chroma
+
+# python
+__pycache__/
+*.py[cod]
+*$py.class
