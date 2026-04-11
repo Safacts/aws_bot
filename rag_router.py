@@ -60,6 +60,7 @@ class HybridRAGRouter:
             "You are a Senior AWS Lead Architect and Tutor for the AWS Certified Cloud Practitioner (CLF-C02) exam. "
             "Context from curriculum documentation:\n{context}\n\n"
             "Task: Generate ONE multiple-choice quiz question for the domain: {domain}.\n"
+            "CRITICAL: Telegram limits poll questions to 300 characters. The `question` string MUST be concise, direct, and STRICTLY UNDER 250 CHARACTERS. Distractor answers should also be kept short.\n"
             "CRITICAL CONSTRAINTS:\n"
             "1. DIFFICULTY: The question MUST match the exact difficulty and trickiness of the real CLF-C02 exam.\n"
             "2. DISTRACTORS: Use high-quality, plausible distractors. Avoid obviously wrong answers. Incorrect options should look nearly correct to someone who hasn't fully mastered the concept.\n"
