@@ -39,28 +39,27 @@ async def ask_next_question(chat_id: int, user_id: int, context: ContextTypes.DE
         chat_id=chat_id, 
         text=f"🧠 Generating a question for *{current_domain}*...", 
         parse_mode="Markdown"
-    )
-
-    try:
+     try:
         # LLM RAG Question Generation
         question_data = await rag_router.generate_question(current_domain)
+        explanation = question_data.get("explanation", "No explanation provided.")
         
-        # Send Poll
+        # Send Poll (Explicitly NON-ANONYMOUS and without native explanation to bypass 200 char limit)
         poll_message = await context.bot.send_poll(
             chat_id=chat_id,
             question=question_data["question"],
             options=question_data["options"],
             type="quiz",
             correct_option_id=question_data["correct_index"],
-            explanation=question_data.get("explanation", "No explanation provided."),
             is_anonymous=False
         )
         
-        # Track the active poll
+        # Track the active poll and store explanation for later delivery
         context.bot_data[poll_message.poll.id] = {
             "chat_id": chat_id,
             "user_id": user_id,
-            "correct_option_id": question_data["correct_index"]
+            "correct_option_id": question_data["correct_index"],
+            "explanation": explanation
         }
         
         # Delete processing message
@@ -112,13 +111,20 @@ async def receive_poll_answer(update: Update, context: ContextTypes.DEFAULT_TYPE
         
     user_id = answer.user.id
     chat_id = poll_data["chat_id"]
+    explanation = poll_data.get("explanation", "No explanation available.")
     selected_option = answer.option_ids[0]
     is_correct = (selected_option == poll_data["correct_option_id"])
     
     user = await get_or_create_user(user_id)
     
-    # Cleanup dictionary to save memory
+    # Cleanup dictionary and send explanation as a separate message
     del context.bot_data[poll_id]
+    
+    await context.bot.send_message(
+        chat_id=chat_id,
+        text=f"💡 **Explanation:**\n{explanation}",
+        parse_mode="Markdown"
+    )
 
     if is_correct:
         user.correct_answers += 1
@@ -168,16 +174,10 @@ async def receive_poll_answer(update: Update, context: ContextTypes.DEFAULT_TYPE
 
     await save_user(user)
     
-    # In all normal scenarios (didn't level up, didn't trigger help limit), just ask the next question
-    # wait a slight moment so the user reads the explanation inside the poll before spamming
+    # Wait asynchronously before firing next question
     import asyncio
-    context.application.create_task(
-        asyncio.sleep(3), 
-        name=f"delay_next_q_{user_id}"
-    )
-    # Wait asynchronously before firing next
     await asyncio.sleep(2)
-    await ask_next_question(chat_id, user_id, context)
+    await ask_next_question(chat_id, user_id, context)t_id, user_id, context)
 
 async def error_handler(update: object, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Log the error and send a telegram message to notify the developer."""
