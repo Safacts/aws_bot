@@ -37,7 +37,7 @@ class HybridRAGRouter:
     def __init__(self):
         # Set up Embeddings and Vector Store
         # Using standard model naming; local chroma_db dir must exist
-        self.embeddings = GoogleGenerativeAIEmbeddings(model="text-embedding-004", google_api_key=GEMINI_API_KEY)
+        self.embeddings = GoogleGenerativeAIEmbeddings(model="models/embedding-001", google_api_key=GEMINI_API_KEY)
         self.vectorstore = Chroma(persist_directory="./chroma_db", embedding_function=self.embeddings)
         self.retriever = self.vectorstore.as_retriever(search_kwargs={"k": 2})
 
