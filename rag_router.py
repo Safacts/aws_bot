@@ -36,15 +36,16 @@ def clean_json_string(raw_text: str) -> str:
 class HybridRAGRouter:
     def __init__(self):
         # Set up Embeddings and Vector Store
-        self.embeddings = GoogleGenerativeAIEmbeddings(model="models/embedding-001", google_api_key=GEMINI_API_KEY)
+        # Using standard model naming; local chroma_db dir must exist
+        self.embeddings = GoogleGenerativeAIEmbeddings(model="text-embedding-004", google_api_key=GEMINI_API_KEY)
         self.vectorstore = Chroma(persist_directory="./chroma_db", embedding_function=self.embeddings)
-        self.retriever = self.vectorstore.as_retriever(search_kwargs={"k": 2}) # Top 2 chunks
+        self.retriever = self.vectorstore.as_retriever(search_kwargs={"k": 2})
 
         # LLMs
         self.gemini = ChatGoogleGenerativeAI(
             model="gemini-1.5-flash", 
             google_api_key=GEMINI_API_KEY,
-            temperature=0.2 # low temp for quiz precision
+            temperature=0.2
         )
         self.ollama = ChatOllama(
             model="llama3.2:latest", 
@@ -54,69 +55,76 @@ class HybridRAGRouter:
         
         # System prompts
         self.quiz_prompt = PromptTemplate.from_template(
-            "You are an AWS Cloud Practitioner Tutor. Using ONLY the following context:\n\n{context}\n\n"
-            "Generate ONE multiple-choice question for the domain: {domain}.\n"
-            "You MUST output your response purely as a valid JSON object without any additional conversational text or markdown code blocks. The JSON format must be strictly:\n"
+            "You are a Senior AWS Cloud Practitioner Tutor. "
+            "Context from documentation:\n{context}\n\n"
+            "Task: Generate ONE multiple-choice quiz question for the domain: {domain}.\n"
+            "Note: If the context above is empty or unavailable, use your internal trained knowledge of AWS best practices.\n"
+            "Output response ONLY as a valid JSON object:\n"
             "{{\n"
-            "  \"question\": \"The exact question text?\",\n"
-            "  \"options\": [\"Option 1\", \"Option 2\", \"Option 3\", \"Option 4\"],\n"
-            "  \"correct_index\": <integer between 0 and 3>,\n"
-            "  \"explanation\": \"Why this answer is correct.\"\n"
+            "  \"question\": \"...\",\n"
+            "  \"options\": [\"...\", \"...\", \"...\", \"...\"],\n"
+            "  \"correct_index\": <0-3>,\n"
+            "  \"explanation\": \"...\"\n"
             "}}"
         )
         
         self.summary_prompt = PromptTemplate.from_template(
-            "You are an AWS Cloud Practitioner Tutor. The user is struggling with the domain: {domain}.\n"
-            "Using ONLY the following gathered context, provide a brief, simplified text summary of the key concepts for this domain.\n\n"
+            "Simplify this AWS domain for a beginner: {domain}.\n"
             "Context:\n{context}\n\n"
-            "Provide the summary directly."
+            "Provide a clear, brief conceptual summary."
         )
 
-    async def _invoke_llm(self, prompt_text: str) -> str:
-        """Invokes Gemini first, falling back to Ollama if rate limits or network issues occur."""
+    async def _invoke_with_fallback(self, prompt_text: str) -> str:
+        """Invokes Gemini primarily, with seamless fallback to local Ollama."""
         try:
             logger.info("Attempting inference with Gemini...")
             response = await self.gemini.ainvoke(prompt_text)
             return response.content
-        except EXHAUSTED_EXC as e:
-            logger.warning(f"Google API rate limit (ResourceExhausted) hit: {e}. Falling back to Ollama.")
-            response = await self.ollama.ainvoke(prompt_text)
-            return response.content
         except Exception as e:
-            # Broad catch-all for other Google API connection issues
-            if "exhausted" in str(e).lower() or "quota" in str(e).lower() or "rate" in str(e).lower():
-                logger.warning(f"Google API rate limit hit: {e}. Falling back to Ollama.")
+            logger.warning(f"Primary LLM (Gemini) failed: {e}. Falling back to Ollama.")
+            try:
                 response = await self.ollama.ainvoke(prompt_text)
                 return response.content
-            # Re-raise if it isn't clearly a connection/quota issue assuming we only fallback on specific errors
-            # But the user said: "If Gemini throws a rate limit or network exception" so catching all is safer
-            logger.warning(f"Google API exception: {e}. Falling back to Ollama.")
-            response = await self.ollama.ainvoke(prompt_text)
-            return response.content
+            except Exception as ollama_err:
+                logger.error(f"Critical Failure: Both Gemini and Ollama are offline. {ollama_err}")
+                raise
 
     async def generate_question(self, domain: str) -> Dict[str, Any]:
-        """Runs RAG, prompts LLM, and parses back the question JSON."""
-        docs = self.retriever.invoke(domain)
-        context = "\n\n".join([d.page_content for d in docs])
-        
+        """Orchestrates RAG retrieval and question generation with multiple fail-safes."""
+        context = ""
+        try:
+            # 1. Attempt RAG Retrieval
+            docs = self.retriever.invoke(domain)
+            context = "\n\n".join([d.page_content for d in docs])
+            logger.info(f"Retrieved {len(docs)} knowledge chunks for {domain}.")
+        except Exception as rag_err:
+            # 2. Fallback to No-Context if Embedding API or DB fails
+            logger.error(f"RAG Retrieval failed (possible API/model error): {rag_err}. Falling back to No-Context mode.")
+            context = "NO DOCUMENTATION CONTEXT AVAILABLE. Proceeding with general knowledge."
+
+        # 3. Generate content using LLM (with its own fallback)
         prompt_text = self.quiz_prompt.format(domain=domain, context=context)
+        raw_output = await self._invoke_with_fallback(prompt_text)
         
-        raw_output = await self._invoke_llm(prompt_text)
+        # 4. Final parsing
         clean_json = clean_json_string(raw_output)
-        
         try:
             return json.loads(clean_json)
         except json.JSONDecodeError as e:
-            logger.error(f"Failed to parse LLM JSON output: {clean_json}")
-            raise Exception("LLM returned malformed JSON") from e
+            logger.error(f"JSON Output Parsing Error: {e}")
+            raise
 
     async def generate_summary(self, domain: str) -> str:
-        """Runs RAG, queries LLM context for a simplified domain summary."""
-        docs = self.retriever.invoke(domain)
-        context = "\n\n".join([d.page_content for d in docs])
-        
+        """Generates a topic summary with RAG and LLM fail-safes."""
+        context = ""
+        try:
+            docs = self.retriever.invoke(domain)
+            context = "\n\n".join([d.page_content for d in docs])
+        except Exception:
+            context = "General knowledge summary."
+
         prompt_text = self.summary_prompt.format(domain=domain, context=context)
-        return await self._invoke_llm(prompt_text)
+        return await self._invoke_with_fallback(prompt_text)
 
 # Singleton instance
 rag_router = HybridRAGRouter()
