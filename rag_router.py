@@ -36,7 +36,7 @@ def clean_json_string(raw_text: str) -> str:
 class HybridRAGRouter:
     def __init__(self):
         # Set up Embeddings and Vector Store
-        self.embeddings = GoogleGenerativeAIEmbeddings(model="models/text-embedding-004", google_api_key=GEMINI_API_KEY)
+        self.embeddings = GoogleGenerativeAIEmbeddings(model="models/embedding-001", google_api_key=GEMINI_API_KEY)
         self.vectorstore = Chroma(persist_directory="./chroma_db", embedding_function=self.embeddings)
         self.retriever = self.vectorstore.as_retriever(search_kwargs={"k": 2}) # Top 2 chunks
 

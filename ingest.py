@@ -45,7 +45,7 @@ def ingest_docs():
     logger.info(f"Split raw documents into {len(docs)} chunks.")
 
     # Generate Embeddings & Store
-    embeddings = GoogleGenerativeAIEmbeddings(model="models/text-embedding-004", google_api_key=GEMINI_API_KEY)
+    embeddings = GoogleGenerativeAIEmbeddings(model="models/embedding-001", google_api_key=GEMINI_API_KEY)
     
     logger.info("Initializing Chroma DB & generating embeddings... This might take a bit.")
     vectorstore = Chroma.from_documents(
