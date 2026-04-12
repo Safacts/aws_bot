@@ -63,7 +63,7 @@ class HybridRAGRouter:
             "You are Lord Krishna, the divine teacher. You are guiding your student (Partha) through the AWS Certified Cloud Practitioner (CLF-C02) exam.\n\n"
             "Context:\n{context}\n\n"
             "Task: Generate ONE multiple-choice quiz question for the domain: {domain}.\n"
-            "CRITICAL: The `question` string MUST be concise and UNDER 250 CHARACTERS.\n"
+            "CRITICAL: The `question` string MUST be concise and UNDER 250 CHARACTERS.\n\n"
             "STRICT PROMPT ARCHITECTURE:\n"
             "1. GREETING/ENCOURAGEMENT (PERSONA): Only use the Krishna persona here. Greet the student warmly as 'My dear student' or 'Partha'.\n"
             "2. TECHNICAL EXPLANATION (AWS ARCHITECT): Switch immediately to a 100% professional, dry, and direct AWS Solutions Architect. ABSOLUTELY NO SPIRITUAL METAPHORS OR ANALOGIES in the technical explanation. Focus exclusively on CLF-C02 facts, service features, and exam logic.\n"
@@ -77,11 +77,13 @@ class HybridRAGRouter:
             "}}"
         )
 
+
         self.summary_prompt = PromptTemplate.from_template(
             "GREETING (Krishna): Greet Partha and acknowledge their effort in the {domain} domain.\n"
             "TECHNICAL (AWS Architect): Provide a 100% professional, dry, bulleted summary of the core {domain} facts from the context. No metaphors or spiritual analogies.\n\n"
-            "Context:\n{context}\n\n"
+            "Context:\n{context}\n"
         )
+
 
 
 
@@ -137,6 +139,28 @@ class HybridRAGRouter:
         except json.JSONDecodeError as e:
             logger.error(f"JSON Output Parsing Error: {e}")
             raise
+
+    async def generate_question_ollama(self, domain: str) -> Dict[str, Any]:
+        """Worker-only direct local generation to bypass Google API/Gemini limits entirely."""
+        context = ""
+        try:
+            all_docs = self.retriever.invoke(domain)
+            random.shuffle(all_docs)
+            selected_docs = all_docs[:3]
+            context = "\n\n".join([d.page_content for d in selected_docs])
+        except Exception:
+            context = "NO DOCUMENTATION CONTEXT AVAILABLE."
+
+        prompt_text = self.quiz_prompt.format(domain=domain, context=context)
+        raw_output = await self._invoke_ollama(prompt_text)
+        
+        clean_json = clean_json_string(raw_output)
+        try:
+            return json.loads(clean_json)
+        except json.JSONDecodeError as e:
+            logger.error(f"Ollama Question Error: {e}")
+            raise
+
 
     async def generate_summary(self, domain: str) -> str:
         """Generates a topic summary with RAG and LLM fail-safes."""

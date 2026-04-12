@@ -64,8 +64,17 @@ async def ask_next_question(chat_id: int, user_id: int, context: ContextTypes.DE
                 await session.commit()
                 logger.info(f"Bot: Pulled question from bank for {current_domain}.")
             else:
-                logger.warning(f"Bot: QuestionBank empty for {current_domain}. Falling back to real-time generation.")
-                question_data = await rag_router.generate_question(current_domain)
+                logger.warning(f"Bot: QuestionBank empty for {current_domain}.")
+                await context.bot.delete_message(chat_id=chat_id, message_id=processing_msg.message_id)
+                await context.bot.send_message(
+                    chat_id=chat_id,
+                    text=(
+                        "My dear student, the cosmic vault of knowledge is currently gathering more wisdom for this domain. "
+                        "Please select another path from the /menu while I prepare your next trial."
+                    )
+                )
+                return
+
 
         explanation = question_data.get("explanation", "No explanation provided.")
         

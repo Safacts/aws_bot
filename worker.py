@@ -31,8 +31,8 @@ async def pregenerate_questions():
                     count = result.scalar()
                     
                     if count < 5:
-                        logger.info(f"Worker: Level low for '{domain}' ({count}/5). Generating...")
-                        question_data = await rag_router.generate_question(domain)
+                        logger.info(f"Worker: Level low for '{domain}' ({count}/5). Generating with local Ollama...")
+                        question_data = await rag_router.generate_question_ollama(domain)
                         
                         new_q = QuestionBank(
                             domain=domain,
@@ -47,8 +47,9 @@ async def pregenerate_questions():
             except Exception as e:
                 logger.error(f"Worker error during generation for {domain}: {e}")
             
-            # Wait 15 seconds to ensure we stay within free-tier RPM limits
-            await asyncio.sleep(15)
+            # Pacing removed as requested to allow faster generation via local LLM
+            await asyncio.sleep(0.1) 
+
 
 
 if __name__ == "__main__":
