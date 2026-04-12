@@ -65,12 +65,16 @@ async def ask_next_question(chat_id: int, user_id: int, context: ContextTypes.DE
             "correct_option_id": question_data["correct_index"]
         }
         
+        # Also track for the user specifically to make /start idempotent
+        context.user_data['current_poll_id'] = poll_message.poll.id
+        
         # Delete processing message
         await context.bot.delete_message(chat_id=chat_id, message_id=processing_msg.message_id)
         
         # Update user stat (question asked)
         user.questions_asked += 1
         await save_user(user)
+
 
     except Exception as e:
         logger.error(f"Error generating question (Attempt {retry_count + 1}): {e}")
@@ -95,26 +99,55 @@ async def ask_next_question(chat_id: int, user_id: int, context: ContextTypes.DE
 
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Handles the /start command."""
+    """Handles the /start command idempotently."""
     user = update.effective_user
     chat_id = update.effective_chat.id
     
-    # Init DB user profile
-    await get_or_create_user(user.id)
+    # Init/Get DB user profile
+    user_prog = await get_or_create_user(user.id)
     
-    await context.bot.send_message(
-        chat_id=chat_id,
-        text=(
-            "Welcome to the Adaptive AWS Cloud Practitioner Tutor! ☁️\n\n"
-            "I will guide you through the official AWS domains using adaptive questioning.\n"
-            f"If you answer {STREAK_TARGET} correctly in a row, you advance.\n"
-            f"If you miss {WRONG_TARGET} in a row, I'll provide a simplified summary of the topic to help you out.\n\n"
-            "Let's get started!"
+    # Check if there is already an active question for this user
+    active_poll_id = context.user_data.get('current_poll_id')
+    if active_poll_id and active_poll_id in context.bot_data:
+        await context.bot.send_message(
+            chat_id=chat_id,
+            text="👋 You already have an active question waiting for you! Please answer it before we move on. 📚"
         )
+        return
+
+    welcome_text = (
+        f"Welcome back, {user.first_name}! ☁️\n\nReady to continue your AWS Cloud Practitioner journey?"
+        if user_prog.questions_asked > 0 else
+        "Welcome to the Adaptive AWS Cloud Practitioner Tutor! ☁️\n\n"
+        "I will guide you through the official AWS domains using adaptive questioning.\n"
+        f"If you answer {STREAK_TARGET} correctly in a row, you advance.\n"
+        f"If you miss {WRONG_TARGET} in a row, I'll provide a simplified summary of the topic to help you out.\n\n"
+        "Let's get started!"
     )
     
-    # Send first question
+    await context.bot.send_message(chat_id=chat_id, text=welcome_text)
+    
+    # Send first/next question
     await ask_next_question(chat_id, user.id, context)
+
+async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Displays help information about the bot."""
+    await context.bot.send_message(
+        chat_id=update.effective_chat.id,
+        text=(
+            "📚 **AWS Tutor Help**\n\n"
+            "Here is how I help you learn:\n"
+            "• **Adaptive Learning**: I track your streaks. Answer 3 correctly to move to the next domain.\n"
+            "• **Explanations**: After every answer, I'll explain why it was right or wrong.\n"
+            "• **Summaries**: If you struggle with a topic, I'll provide a simplified study summary.\n\n"
+            "**Commands:**\n"
+            "/start - Begin or resume your learning session\n"
+            "/next - Manually skip to the next AWS domain\n"
+            "/help - Show this help message"
+        ),
+        parse_mode="Markdown"
+    )
+
 
 async def receive_poll_answer(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Handles incoming poll answers and triggers the infinite learning loop."""
@@ -137,11 +170,18 @@ async def receive_poll_answer(update: Update, context: ContextTypes.DEFAULT_TYPE
     if poll_id in context.bot_data:
         del context.bot_data[poll_id]
     
+    # Clear active poll from user data
+    if 'current_poll_id' in context.user_data:
+        del context.user_data['current_poll_id']
+    
+    result_prefix = "✅ **Correct!**" if is_correct else "❌ **Incorrect.**"
+    
     await context.bot.send_message(
         chat_id=chat_id,
-        text=f"💡 **Explanation:**\n{explanation}",
+        text=f"{result_prefix}\n\n💡 **Explanation:**\n{explanation}",
         parse_mode="Markdown"
     )
+
 
     if is_correct:
         user.correct_answers += 1
@@ -253,11 +293,13 @@ if __name__ == '__main__':
 
     application.add_handler(CommandHandler('start', start))
     application.add_handler(CommandHandler('next', next_topic))
+    application.add_handler(CommandHandler('help', help_command))
     application.add_handler(PollAnswerHandler(receive_poll_answer))
     application.add_error_handler(error_handler)
 
     
     logger.info("Starting bot...")
     application.run_polling(allowed_updates=["message", "poll_answer", "poll", "callback_query"])
+
 
 
