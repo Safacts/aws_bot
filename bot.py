@@ -10,7 +10,9 @@ from telegram.ext import (
 )
 
 
+import telegram.error
 from config import BOT_TOKEN, AWS_DOMAINS, STREAK_TARGET, WRONG_TARGET
+
 from database import init_db, get_or_create_user, save_user
 from rag_router import rag_router
 
@@ -232,13 +234,29 @@ async def receive_poll_answer(update: Update, context: ContextTypes.DEFAULT_TYPE
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
     
-    # Send Explanation with Choices
-    await context.bot.send_message(
-        chat_id=chat_id,
-        text=f"{result_prefix}\n\n💡 **Explanation:**\n{explanation}",
-        parse_mode="Markdown",
-        reply_markup=reply_markup
-    )
+    # Send Explanation with Choices (with Markdown fallback)
+    explanation_text = f"{result_prefix}\n\n💡 **Explanation:**\n{explanation}"
+    try:
+        await context.bot.send_message(
+            chat_id=chat_id,
+            text=explanation_text,
+            parse_mode="Markdown",
+            reply_markup=reply_markup
+        )
+    except telegram.error.BadRequest as e:
+        if "Can't parse entities" in str(e):
+            logger.warning(f"Markdown parsing failed for explanation. Falling back to plain text. Error: {e}")
+            # Simplified text without markdown markers
+            plain_prefix = "✅ Correct!" if is_correct else "❌ Incorrect."
+            plain_text = f"{plain_prefix}\n\nExplanation:\n{explanation}"
+            await context.bot.send_message(
+                chat_id=chat_id,
+                text=plain_text,
+                reply_markup=reply_markup
+            )
+        else:
+            raise
+
 
     # Process Streaks (Silent update, no auto-next)
     if is_correct:
