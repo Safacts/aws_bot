@@ -47,8 +47,9 @@ async def pregenerate_questions():
             except Exception as e:
                 logger.error(f"Worker error during generation for {domain}: {e}")
             
-            # Wait 5 seconds as requested by user
-            await asyncio.sleep(5)
+            # Wait 15 seconds to ensure we stay within free-tier RPM limits
+            await asyncio.sleep(15)
+
 
 if __name__ == "__main__":
     try:
