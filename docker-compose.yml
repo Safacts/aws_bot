@@ -23,6 +23,24 @@ services:
       - shared_net
     restart: unless-stopped
 
+  worker:
+    build: .
+    container_name: aws_tutor_worker
+    command: python worker.py
+    depends_on:
+      aws_tutor_db:
+        condition: service_healthy
+    env_file:
+      - .env
+    environment:
+      <<: *common-env
+    volumes:
+      - ./chroma_db:/app/chroma_db
+    networks:
+      - shared_net
+    restart: unless-stopped
+
+
   aws_tutor_db:
     image: postgres:15-alpine
     container_name: aws_tutor_db

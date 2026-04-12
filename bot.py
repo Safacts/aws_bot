@@ -10,10 +10,13 @@ from telegram.ext import (
 )
 
 
+import json
 import telegram.error
+from sqlalchemy import select
 from config import BOT_TOKEN, AWS_DOMAINS, STREAK_TARGET, WRONG_TARGET
 
-from database import init_db, get_or_create_user, save_user
+from database import init_db, get_or_create_user, save_user, AsyncSessionLocal, QuestionBank
+
 from rag_router import rag_router
 
 # Set up basic logging
@@ -44,8 +47,25 @@ async def ask_next_question(chat_id: int, user_id: int, context: ContextTypes.DE
     )
 
     try:
-        # LLM RAG Question Generation
-        question_data = await rag_router.generate_question(current_domain)
+        # 1. Try to fetch from QuestionBank first to avoid hit limits
+        async with AsyncSessionLocal() as session:
+            stmt = select(QuestionBank).where(
+                QuestionBank.domain == current_domain,
+                QuestionBank.is_used == 0
+            ).limit(1)
+            result = await session.execute(stmt)
+            bank_q = result.scalar_one_or_none()
+            
+            if bank_q:
+                question_data = json.loads(bank_q.question_data)
+                bank_q.is_used = 1
+                await session.merge(bank_q)
+                await session.commit()
+                logger.info(f"Bot: Pulled question from bank for {current_domain}.")
+            else:
+                logger.warning(f"Bot: QuestionBank empty for {current_domain}. Falling back to real-time generation.")
+                question_data = await rag_router.generate_question(current_domain)
+
         explanation = question_data.get("explanation", "No explanation provided.")
         
         # Send Poll (Explicitly NON-ANONYMOUS)
@@ -57,6 +77,7 @@ async def ask_next_question(chat_id: int, user_id: int, context: ContextTypes.DE
             correct_option_id=question_data["correct_index"],
             is_anonymous=False
         )
+
         
         # Track the active poll globally
         context.bot_data[poll_message.poll.id] = {

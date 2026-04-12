@@ -20,6 +20,16 @@ class UserProgress(Base):
     current_correct_streak = Column(Integer, default=0)
     current_wrong_streak = Column(Integer, default=0)
 
+class QuestionBank(Base):
+    __tablename__ = 'question_bank'
+    
+    id = Column(Integer, primary_key=True)
+    domain = Column(String)
+    question_data = Column(String) # JSON string
+    is_used = Column(Integer, default=0) # 0 = fresh, 1 = used
+
+
+
 # Create an async database engine matching the injected DATABASE_URL
 engine = create_async_engine(DATABASE_URL, echo=False)
 AsyncSessionLocal = async_sessionmaker(

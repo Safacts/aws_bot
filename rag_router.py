@@ -45,10 +45,11 @@ class HybridRAGRouter:
 
         # LLMs
         self.gemini = ChatGoogleGenerativeAI(
-            model="gemini-2.5-flash", 
+            model="gemini-2.0-flash", 
             google_api_key=GEMINI_API_KEY,
             temperature=0.8
         )
+
         self.ollama = ChatOllama(
             model="llama3.2:latest", 
             base_url=OLLAMA_BASE_URL,
