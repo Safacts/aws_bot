@@ -19,8 +19,8 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-async def ask_next_question(chat_id: int, user_id: int, context: ContextTypes.DEFAULT_TYPE):
-    """Fetches a generated question and sends it to the user."""
+async def ask_next_question(chat_id: int, user_id: int, context: ContextTypes.DEFAULT_TYPE, retry_count: int = 0):
+    """Fetches a generated question and sends it to the user with retry logic."""
     # Retrieve user state
     user = await get_or_create_user(user_id)
     
@@ -56,10 +56,11 @@ async def ask_next_question(chat_id: int, user_id: int, context: ContextTypes.DE
             is_anonymous=False
         )
         
-        # Track the active poll and store explanation for later delivery
+        # Track the active poll and store explanation/chat_id for later delivery
         context.bot_data[poll_message.poll.id] = {
             "explanation": explanation,
             "user_id": user_id,
+            "chat_id": chat_id,
             "correct_option_id": question_data["correct_index"]
         }
         
@@ -71,12 +72,26 @@ async def ask_next_question(chat_id: int, user_id: int, context: ContextTypes.DE
         await save_user(user)
 
     except Exception as e:
-        logger.error(f"Error generating question: {e}")
-        await context.bot.edit_message_text(
-            chat_id=chat_id, 
-            message_id=processing_msg.message_id, 
-            text="⚠️ Sorry, there was an issue generating the question. Please try again later or type /start."
-        )
+        logger.error(f"Error generating question (Attempt {retry_count + 1}): {e}")
+        
+        if retry_count < 1:
+            await context.bot.edit_message_text(
+                chat_id=chat_id, 
+                message_id=processing_msg.message_id, 
+                text="⚠️ Gemini is busy. Retrying in 3 seconds... ⏳"
+            )
+            import asyncio
+            await asyncio.sleep(3)
+            # Delete old processing message and try again
+            await context.bot.delete_message(chat_id=chat_id, message_id=processing_msg.message_id)
+            return await ask_next_question(chat_id, user_id, context, retry_count=retry_count + 1)
+        else:
+            await context.bot.edit_message_text(
+                chat_id=chat_id, 
+                message_id=processing_msg.message_id, 
+                text="⚠️ Sorry, there was an issue generating the question after retries. Please type /start to try again."
+            )
+
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Handles the /start command."""
@@ -101,27 +116,28 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await ask_next_question(chat_id, user.id, context)
 
 async def receive_poll_answer(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Handles incoming poll answers to update adaptive logic."""
+    """Handles incoming poll answers and triggers the infinite learning loop."""
     answer = update.poll_answer
     poll_id = answer.poll_id
     
     stored_data = context.bot_data.get(poll_id)
     if not stored_data:
-        # Unknown poll
         return
         
     user_id = answer.user.id
+    chat_id = stored_data.get("chat_id", user_id) # Fallback to user_id for private chats
     explanation = stored_data.get("explanation", "No explanation available.")
     selected_option = answer.option_ids[0]
     is_correct = (selected_option == stored_data["correct_option_id"])
     
     user = await get_or_create_user(user_id)
     
-    # Cleanup dictionary and send explanation as a separate message
-    del context.bot_data[poll_id]
+    # Cleanup and send explanation
+    if poll_id in context.bot_data:
+        del context.bot_data[poll_id]
     
     await context.bot.send_message(
-        chat_id=stored_data["user_id"],
+        chat_id=chat_id,
         text=f"💡 **Explanation:**\n{explanation}",
         parse_mode="Markdown"
     )
@@ -150,8 +166,11 @@ async def receive_poll_answer(update: Update, context: ContextTypes.DEFAULT_TYPE
         
         # Summary helper condition
         if user.current_wrong_streak >= WRONG_TARGET:
-            current_domain = AWS_DOMAINS[user.current_topic_index]
-            user.current_wrong_streak = 0 # Reset wrong streak after helping
+            current_domain = "Unknown"
+            if user.current_topic_index < len(AWS_DOMAINS):
+                current_domain = AWS_DOMAINS[user.current_topic_index]
+            
+            user.current_wrong_streak = 0 
             
             await context.bot.send_message(
                 chat_id=chat_id,
@@ -172,12 +191,14 @@ async def receive_poll_answer(update: Update, context: ContextTypes.DEFAULT_TYPE
             await ask_next_question(chat_id, user_id, context)
             return
 
+    # Update state and trigger next question automatically
     await save_user(user)
     
-    # Wait asynchronously before firing next question
+    # Wait briefly before firing next question to ensure UX flow
     import asyncio
     await asyncio.sleep(2)
     await ask_next_question(chat_id, user_id, context)
+
 
 async def next_topic(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Manually advances the user to the next AWS domain."""

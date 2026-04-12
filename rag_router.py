@@ -84,17 +84,26 @@ class HybridRAGRouter:
     async def _invoke_with_fallback(self, prompt_text: str) -> str:
         """Invokes Gemini primarily, with seamless fallback to local Ollama."""
         try:
-            logger.info("Attempting inference with Gemini (flash-latest)...")
+            logger.info("Attempting inference with Gemini (gemini-2.5-flash)...")
             response = await self.gemini.ainvoke(prompt_text)
             return response.content
+        except EXHAUSTED_EXC as e:
+            logger.warning(f"Gemini API Quota Exhausted (429): {e}. Switching to local Ollama.")
+            return await self._invoke_ollama(prompt_text)
         except Exception as e:
             logger.warning(f"Primary LLM (Gemini) failed: {e}. Falling back to Ollama.")
-            try:
-                response = await self.ollama.ainvoke(prompt_text)
-                return response.content
-            except Exception as ollama_err:
-                logger.error(f"Critical Failure: Both Gemini and Ollama are offline. {ollama_err}")
-                raise
+            return await self._invoke_ollama(prompt_text)
+
+    async def _invoke_ollama(self, prompt_text: str) -> str:
+        """Helper to invoke local Ollama LLM."""
+        try:
+            logger.info("Attempting inference with local Ollama (llama3.2)...")
+            response = await self.ollama.ainvoke(prompt_text)
+            return response.content
+        except Exception as ollama_err:
+            logger.error(f"Critical Failure: Both Gemini and Ollama are offline. {ollama_err}")
+            raise
+
 
     async def generate_question(self, domain: str) -> Dict[str, Any]:
         """Orchestrates RAG retrieval and question generation with shuffle-and-sample fail-safes."""
