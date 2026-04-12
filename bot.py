@@ -1,5 +1,5 @@
 import logging
-import json
+import asyncio
 from telegram import Update
 from telegram.ext import (
     ApplicationBuilder,
@@ -7,7 +7,6 @@ from telegram.ext import (
     PollAnswerHandler,
     ContextTypes
 )
-
 
 from config import BOT_TOKEN, AWS_DOMAINS, STREAK_TARGET, WRONG_TARGET
 from database import init_db, get_or_create_user, save_user
@@ -22,7 +21,6 @@ logger = logging.getLogger(__name__)
 
 async def ask_next_question(chat_id: int, user_id: int, context: ContextTypes.DEFAULT_TYPE, retry_count: int = 0):
     """Fetches a generated question and sends it to the user with retry logic."""
-    # Retrieve user state
     user = await get_or_create_user(user_id)
     
     # Check if they exhausted the curriculum
@@ -35,7 +33,6 @@ async def ask_next_question(chat_id: int, user_id: int, context: ContextTypes.DE
     
     current_domain = AWS_DOMAINS[user.current_topic_index]
     
-    # Inform user we are generating
     processing_msg = await context.bot.send_message(
         chat_id=chat_id, 
         text=f"🧠 Generating a question for *{current_domain}*...", 
@@ -47,7 +44,7 @@ async def ask_next_question(chat_id: int, user_id: int, context: ContextTypes.DE
         question_data = await rag_router.generate_question(current_domain)
         explanation = question_data.get("explanation", "No explanation provided.")
         
-        # Send Poll (Explicitly NON-ANONYMOUS and without native explanation to bypass 200 char limit)
+        # Send Poll (Explicitly NON-ANONYMOUS)
         poll_message = await context.bot.send_poll(
             chat_id=chat_id,
             question=question_data["question"],
@@ -57,7 +54,7 @@ async def ask_next_question(chat_id: int, user_id: int, context: ContextTypes.DE
             is_anonymous=False
         )
         
-        # Track the active poll and store explanation/chat_id for later delivery
+        # Track the active poll globally
         context.bot_data[poll_message.poll.id] = {
             "explanation": explanation,
             "user_id": user_id,
@@ -65,16 +62,15 @@ async def ask_next_question(chat_id: int, user_id: int, context: ContextTypes.DE
             "correct_option_id": question_data["correct_index"]
         }
         
-        # Also track for the user specifically to make /start idempotent
-        context.user_data['current_poll_id'] = poll_message.poll.id
+        # Track user's active poll to prevent /start spam (avoids context.user_data crashes)
+        if "user_active_polls" not in context.bot_data:
+            context.bot_data["user_active_polls"] = {}
+        context.bot_data["user_active_polls"][user_id] = poll_message.poll.id
         
-        # Delete processing message
         await context.bot.delete_message(chat_id=chat_id, message_id=processing_msg.message_id)
         
-        # Update user stat (question asked)
         user.questions_asked += 1
         await save_user(user)
-
 
     except Exception as e:
         logger.error(f"Error generating question (Attempt {retry_count + 1}): {e}")
@@ -85,9 +81,7 @@ async def ask_next_question(chat_id: int, user_id: int, context: ContextTypes.DE
                 message_id=processing_msg.message_id, 
                 text="⚠️ Gemini is busy. Retrying in 3 seconds... ⏳"
             )
-            import asyncio
             await asyncio.sleep(3)
-            # Delete old processing message and try again
             await context.bot.delete_message(chat_id=chat_id, message_id=processing_msg.message_id)
             return await ask_next_question(chat_id, user_id, context, retry_count=retry_count + 1)
         else:
@@ -97,17 +91,15 @@ async def ask_next_question(chat_id: int, user_id: int, context: ContextTypes.DE
                 text="⚠️ Sorry, there was an issue generating the question after retries. Please type /start to try again."
             )
 
-
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Handles the /start command idempotently."""
     user = update.effective_user
     chat_id = update.effective_chat.id
     
-    # Init/Get DB user profile
     user_prog = await get_or_create_user(user.id)
     
-    # Check if there is already an active question for this user
-    active_poll_id = context.user_data.get('current_poll_id')
+    # Check if there is already an active question globally
+    active_poll_id = context.bot_data.get("user_active_polls", {}).get(user.id)
     if active_poll_id and active_poll_id in context.bot_data:
         await context.bot.send_message(
             chat_id=chat_id,
@@ -126,8 +118,6 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     )
     
     await context.bot.send_message(chat_id=chat_id, text=welcome_text)
-    
-    # Send first/next question
     await ask_next_question(chat_id, user.id, context)
 
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -148,56 +138,54 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         parse_mode="Markdown"
     )
 
-
 async def receive_poll_answer(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Handles incoming poll answers and triggers the infinite learning loop."""
     answer = update.poll_answer
     poll_id = answer.poll_id
+    user_id = answer.user.id
     
     stored_data = context.bot_data.get(poll_id)
     if not stored_data:
         return
         
-    user_id = answer.user.id
-    chat_id = stored_data.get("chat_id", user_id) # Fallback to user_id for private chats
+    chat_id = stored_data.get("chat_id", user_id) 
     explanation = stored_data.get("explanation", "No explanation available.")
+    correct_option_id = stored_data["correct_option_id"]
+    
+    # Cleanup memory to prevent double-processing
+    del context.bot_data[poll_id]
+    if "user_active_polls" in context.bot_data and user_id in context.bot_data["user_active_polls"]:
+        del context.bot_data["user_active_polls"][user_id]
+
     selected_option = answer.option_ids[0]
-    is_correct = (selected_option == stored_data["correct_option_id"])
+    is_correct = (selected_option == correct_option_id)
     
     user = await get_or_create_user(user_id)
     
-    # Cleanup and send explanation
-    if poll_id in context.bot_data:
-        del context.bot_data[poll_id]
-    
-    # Clear active poll from user data
-    if 'current_poll_id' in context.user_data:
-        del context.user_data['current_poll_id']
-    
     result_prefix = "✅ **Correct!**" if is_correct else "❌ **Incorrect.**"
     
+    # Send Explanation
     await context.bot.send_message(
         chat_id=chat_id,
         text=f"{result_prefix}\n\n💡 **Explanation:**\n{explanation}",
         parse_mode="Markdown"
     )
 
-
+    # Process Streaks
     if is_correct:
         user.correct_answers += 1
         user.current_correct_streak += 1
         user.current_wrong_streak = 0
         
-        # Level up condition
         if user.current_correct_streak >= STREAK_TARGET:
             user.current_topic_index += 1
             user.current_correct_streak = 0
-            
             await context.bot.send_message(
                 chat_id=chat_id,
                 text="🌟 **Level Up!** 🌟\nYou've mastered this domain! Moving on to the next topic."
             )
             await save_user(user)
+            await asyncio.sleep(2)
             await ask_next_question(chat_id, user_id, context)
             return
             
@@ -205,12 +193,8 @@ async def receive_poll_answer(update: Update, context: ContextTypes.DEFAULT_TYPE
         user.current_wrong_streak += 1
         user.current_correct_streak = 0
         
-        # Summary helper condition
         if user.current_wrong_streak >= WRONG_TARGET:
-            current_domain = "Unknown"
-            if user.current_topic_index < len(AWS_DOMAINS):
-                current_domain = AWS_DOMAINS[user.current_topic_index]
-            
+            current_domain = AWS_DOMAINS[user.current_topic_index] if user.current_topic_index < len(AWS_DOMAINS) else "Unknown"
             user.current_wrong_streak = 0 
             
             await context.bot.send_message(
@@ -229,17 +213,14 @@ async def receive_poll_answer(update: Update, context: ContextTypes.DEFAULT_TYPE
                 logger.error(f"Error generating summary: {e}")
                 
             await save_user(user)
+            await asyncio.sleep(2)
             await ask_next_question(chat_id, user_id, context)
             return
 
-    # Update state and trigger next question automatically
+    # Standard loop continuation
     await save_user(user)
-    
-    # Wait briefly before firing next question to ensure UX flow
-    import asyncio
     await asyncio.sleep(2)
     await ask_next_question(chat_id, user_id, context)
-
 
 async def next_topic(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Manually advances the user to the next AWS domain."""
@@ -248,7 +229,6 @@ async def next_topic(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     user = await get_or_create_user(user_id)
     
-    # Increment and wrap around
     user.current_topic_index = (user.current_topic_index + 1) % len(AWS_DOMAINS)
     user.current_correct_streak = 0
     user.current_wrong_streak = 0
@@ -262,24 +242,25 @@ async def next_topic(update: Update, context: ContextTypes.DEFAULT_TYPE):
         parse_mode="Markdown"
     )
     
+    # Clear any active poll locks
+    if "user_active_polls" in context.bot_data and user_id in context.bot_data["user_active_polls"]:
+        del context.bot_data["user_active_polls"][user_id]
+        
     await ask_next_question(chat_id, user_id, context)
 
 async def error_handler(update: object, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """Log the error and send a telegram message to notify the developer."""
     logger.error("Exception while handling an update:", exc_info=context.error)
     if isinstance(update, Update) and update.effective_chat:
         await context.bot.send_message(
             chat_id=update.effective_chat.id,
-            text="⚠️ An internal error occurred. Our engineers have been notified. Please try again later."
+            text="⚠️ An internal error occurred. Please try again later."
         )
 
 async def post_init(application) -> None:
-    """Initializes the database within the application's event loop."""
     await init_db()
-    logger.info("Database initialization complete in post_init.")
+    logger.info("Database initialization complete.")
 
 if __name__ == '__main__':
-    # Build Telegram App with post_init hook
     application = (
         ApplicationBuilder()
         .token(BOT_TOKEN)
@@ -287,7 +268,6 @@ if __name__ == '__main__':
         .build()
     )
     
-    # Track polls in bot_data memory
     if "bot_data" not in application.bot_data:
         application.bot_data = {}
 
@@ -296,10 +276,6 @@ if __name__ == '__main__':
     application.add_handler(CommandHandler('help', help_command))
     application.add_handler(PollAnswerHandler(receive_poll_answer))
     application.add_error_handler(error_handler)
-
     
     logger.info("Starting bot...")
     application.run_polling(allowed_updates=["message", "poll_answer", "poll", "callback_query"])
-
-
-
