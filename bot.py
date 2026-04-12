@@ -1,12 +1,14 @@
 import logging
 import asyncio
-from telegram import Update
+from telegram import Update, InlineKeyboardMarkup, InlineKeyboardButton
 from telegram.ext import (
     ApplicationBuilder,
     CommandHandler,
     PollAnswerHandler,
+    CallbackQueryHandler,
     ContextTypes
 )
+
 
 from config import BOT_TOKEN, AWS_DOMAINS, STREAK_TARGET, WRONG_TARGET
 from database import init_db, get_or_create_user, save_user
@@ -127,32 +129,89 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         text=(
             "📚 **AWS Tutor Help**\n\n"
             "Here is how I help you learn:\n"
-            "• **Adaptive Learning**: I track your streaks. Answer 3 correctly to move to the next domain.\n"
-            "• **Explanations**: After every answer, I'll explain why it was right or wrong.\n"
-            "• **Summaries**: If you struggle with a topic, I'll provide a simplified study summary.\n\n"
+            "• **Choose Topics**: Use /menu to select a specific AWS domain.\n"
+            "• **Adaptive Learning**: I track your streaks. Answer 3 correctly to level up.\n"
+            "• **Manual Flow**: After answering, YOU decide when to see the next question.\n\n"
             "**Commands:**\n"
             "/start - Begin or resume your learning session\n"
-            "/next - Manually skip to the next AWS domain\n"
-            "/help - Show this help message"
+            "/menu  - Open the domain selection menu\n"
+            "/next  - Manually skip to the next AWS domain\n"
+            "/help  - Show this help message"
         ),
         parse_mode="Markdown"
     )
 
+async def menu_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Displays the interactive domain selection menu."""
+    keyboard = []
+    for i, domain in enumerate(AWS_DOMAINS):
+        keyboard.append([InlineKeyboardButton(domain, callback_data=f"domain_{i}")])
+    
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    
+    message_text = "📋 **Main Menu**\nSelect an AWS Domain to focus on:"
+    
+    if update.message:
+        await update.message.reply_text(message_text, reply_markup=reply_markup, parse_mode="Markdown")
+    else:
+        # Fallback for callback queries
+        await update.effective_chat.send_message(message_text, reply_markup=reply_markup, parse_mode="Markdown")
+
+async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Handles all inline button clicks."""
+    query = update.callback_query
+    await query.answer()
+    
+    user_id = update.effective_user.id
+    chat_id = update.effective_chat.id
+    
+    if query.data.startswith("domain_"):
+        domain_index = int(query.data.split("_")[1])
+        user = await get_or_create_user(user_id)
+        
+        # Update progression
+        user.current_topic_index = domain_index
+        user.current_correct_streak = 0
+        user.current_wrong_streak = 0
+        await save_user(user)
+        
+        domain_name = AWS_DOMAINS[domain_index]
+        await query.edit_message_text(
+            text=f"🎯 **Topic Selected:** {domain_name}\nGenerating your first question...",
+            parse_mode="Markdown"
+        )
+        
+        # Clear any existing locks
+        if "user_active_polls" in context.bot_data and user_id in context.bot_data["user_active_polls"]:
+            del context.bot_data["user_active_polls"][user_id]
+            
+        await ask_next_question(chat_id, user_id, context)
+
+    elif query.data == "next_q":
+        await ask_next_question(chat_id, user_id, context)
+        
+    elif query.data == "show_menu":
+        await menu_command(update, context)
+
+
 async def receive_poll_answer(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Handles incoming poll answers and triggers the infinite learning loop."""
+    """Handles incoming poll answers with heavy logging and manual result continuation."""
     answer = update.poll_answer
     poll_id = answer.poll_id
     user_id = answer.user.id
     
+    logger.info(f"POLL TRIGGERED: User {user_id} answered Poll {poll_id}")
+    
     stored_data = context.bot_data.get(poll_id)
     if not stored_data:
+        logger.warning(f"POLL MISSING: Poll {poll_id} not found in bot_data")
         return
         
     chat_id = stored_data.get("chat_id", user_id) 
     explanation = stored_data.get("explanation", "No explanation available.")
     correct_option_id = stored_data["correct_option_id"]
     
-    # Cleanup memory to prevent double-processing
+    # Cleanup memory
     del context.bot_data[poll_id]
     if "user_active_polls" in context.bot_data and user_id in context.bot_data["user_active_polls"]:
         del context.bot_data["user_active_polls"][user_id]
@@ -164,14 +223,24 @@ async def receive_poll_answer(update: Update, context: ContextTypes.DEFAULT_TYPE
     
     result_prefix = "✅ **Correct!**" if is_correct else "❌ **Incorrect.**"
     
-    # Send Explanation
+    # Buttons for next steps
+    keyboard = [
+        [
+            InlineKeyboardButton("⏭️ Next Question", callback_data="next_q"),
+            InlineKeyboardButton("📋 Menu", callback_data="show_menu")
+        ]
+    ]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    
+    # Send Explanation with Choices
     await context.bot.send_message(
         chat_id=chat_id,
         text=f"{result_prefix}\n\n💡 **Explanation:**\n{explanation}",
-        parse_mode="Markdown"
+        parse_mode="Markdown",
+        reply_markup=reply_markup
     )
 
-    # Process Streaks
+    # Process Streaks (Silent update, no auto-next)
     if is_correct:
         user.correct_answers += 1
         user.current_correct_streak += 1
@@ -182,12 +251,8 @@ async def receive_poll_answer(update: Update, context: ContextTypes.DEFAULT_TYPE
             user.current_correct_streak = 0
             await context.bot.send_message(
                 chat_id=chat_id,
-                text="🌟 **Level Up!** 🌟\nYou've mastered this domain! Moving on to the next topic."
+                text="🌟 **Level Up!** 🌟\nYou've mastered this domain! Use the buttons above or /menu to continue."
             )
-            await save_user(user)
-            await asyncio.sleep(2)
-            await ask_next_question(chat_id, user_id, context)
-            return
             
     else:
         user.current_wrong_streak += 1
@@ -199,7 +264,7 @@ async def receive_poll_answer(update: Update, context: ContextTypes.DEFAULT_TYPE
             
             await context.bot.send_message(
                 chat_id=chat_id,
-                text="It looks like you're struggling a bit with this topic. Let me summarize it for you..."
+                text="It looks like you're struggling a bit. Reach out for the summary in the menu or continue practicing."
             )
             
             try:
@@ -212,15 +277,8 @@ async def receive_poll_answer(update: Update, context: ContextTypes.DEFAULT_TYPE
             except Exception as e:
                 logger.error(f"Error generating summary: {e}")
                 
-            await save_user(user)
-            await asyncio.sleep(2)
-            await ask_next_question(chat_id, user_id, context)
-            return
-
-    # Standard loop continuation
     await save_user(user)
-    await asyncio.sleep(2)
-    await ask_next_question(chat_id, user_id, context)
+
 
 async def next_topic(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Manually advances the user to the next AWS domain."""
@@ -274,8 +332,10 @@ if __name__ == '__main__':
     application.add_handler(CommandHandler('start', start))
     application.add_handler(CommandHandler('next', next_topic))
     application.add_handler(CommandHandler('help', help_command))
+    application.add_handler(CommandHandler('menu', menu_command))
     application.add_handler(PollAnswerHandler(receive_poll_answer))
+    application.add_handler(CallbackQueryHandler(handle_callback))
     application.add_error_handler(error_handler)
     
     logger.info("Starting bot...")
-    application.run_polling(allowed_updates=["message", "poll_answer", "poll", "callback_query"])
+    application.run_polling(allowed_updates=["message", "poll_answer", "poll", "callback_query"])
