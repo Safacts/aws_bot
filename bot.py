@@ -4,9 +4,10 @@ from telegram import Update
 from telegram.ext import (
     ApplicationBuilder,
     CommandHandler,
-    PollHandler,
+    PollAnswerHandler,
     ContextTypes
 )
+
 
 from config import BOT_TOKEN, AWS_DOMAINS, STREAK_TARGET, WRONG_TARGET
 from database import init_db, get_or_create_user, save_user
@@ -252,9 +253,11 @@ if __name__ == '__main__':
 
     application.add_handler(CommandHandler('start', start))
     application.add_handler(CommandHandler('next', next_topic))
-    application.add_handler(PollHandler(receive_poll_answer))
+    application.add_handler(PollAnswerHandler(receive_poll_answer))
     application.add_error_handler(error_handler)
+
     
     logger.info("Starting bot...")
-    application.run_polling(allowed_updates=Update.ALL_TYPES)
+    application.run_polling(allowed_updates=["message", "poll_answer", "poll", "callback_query"])
+
 
