@@ -12,8 +12,9 @@ from telegram.ext import (
 
 import json
 import telegram.error
-from sqlalchemy import select
+from sqlalchemy import select, func
 from config import BOT_TOKEN, AWS_DOMAINS, STREAK_TARGET, WRONG_TARGET
+
 
 from database import init_db, get_or_create_user, save_user, AsyncSessionLocal, QuestionBank
 
@@ -183,7 +184,16 @@ async def menu_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Handles all inline button clicks."""
     query = update.callback_query
-    await query.answer()
+    
+    # Wrap in try/except to handle old query errors gracefully
+    try:
+        await query.answer()
+    except telegram.error.BadRequest as e:
+        if "Query is too old" in str(e):
+            logger.warning(f"Callback query too old: {e}")
+        else:
+            raise
+
     
     user_id = update.effective_user.id
     chat_id = update.effective_chat.id
@@ -319,6 +329,32 @@ async def receive_poll_answer(update: Update, context: ContextTypes.DEFAULT_TYPE
     await save_user(user)
 
 
+async def stats_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Displays user progress and database statistics."""
+    user_id = update.effective_user.id
+    user = await get_or_create_user(user_id)
+    
+    # Query the background stockpile
+    async with AsyncSessionLocal() as session:
+        stmt = select(func.count()).select_from(QuestionBank).where(QuestionBank.is_used == 0)
+        result = await session.execute(stmt)
+        vault_count = result.scalar()
+
+    current_domain = AWS_DOMAINS[user.current_topic_index] if user.current_topic_index < len(AWS_DOMAINS) else "Infinite Knowledge"
+    
+    stats_text = (
+        "🕉️ **Your Path to Wisdom** 🕉️\n\n"
+        f"🙏 **Student**: {update.effective_user.first_name}\n"
+        f"✅ **Acts of Truth**: {user.correct_answers} correct answers\n"
+        f"🎯 **Current Focus**: {current_domain}\n\n"
+        "🏛️ **The AI Question Vault**\n"
+        f"📦 **Stockpiled Questions**: {vault_count} ready in the vault\n\n"
+        "Keep moving forward, Partha. Stability is achieved through constant practice."
+    )
+    await update.message.reply_text(stats_text, parse_mode="Markdown")
+
+
+
 async def next_topic(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Manually advances the user to the next AWS domain."""
     user_id = update.effective_user.id
@@ -355,7 +391,15 @@ async def error_handler(update: object, context: ContextTypes.DEFAULT_TYPE) -> N
 
 async def post_init(application) -> None:
     await init_db()
-    logger.info("Database initialization complete.")
+    # Register native Telegram command menu
+    await application.bot.set_my_commands([
+        ("start", "Begin learning"),
+        ("menu", "Choose an AWS Domain"),
+        ("stats", "View your progress & DB stats"),
+        ("help", "How to use this bot")
+    ])
+    logger.info("Database initialization complete and native menu registered.")
+
 
 if __name__ == '__main__':
     application = (
@@ -372,6 +416,8 @@ if __name__ == '__main__':
     application.add_handler(CommandHandler('next', next_topic))
     application.add_handler(CommandHandler('help', help_command))
     application.add_handler(CommandHandler('menu', menu_command))
+    application.add_handler(CommandHandler('stats', stats_command))
+
     application.add_handler(PollAnswerHandler(receive_poll_answer))
     application.add_handler(CallbackQueryHandler(handle_callback))
     application.add_error_handler(error_handler)
