@@ -28,8 +28,15 @@ except ImportError:
     EXHAUSTED_EXC = Exception
 
 def clean_json_string(raw_text: str) -> str:
-    """Removes markdown block formatting and conversational filler to return clean JSON."""
+    """Uses regex to extract the first valid JSON object from the LLM output."""
     raw_text = raw_text.strip()
+    
+    # Use re.search to find the first '{' and last '}'
+    match = re.search(r'(\{.*\})', raw_text, re.DOTALL)
+    if match:
+        return match.group(0).strip()
+    
+    # Fallback to simple stripping if regex fails
     if raw_text.startswith("```json"):
         raw_text = raw_text[7:]
     elif raw_text.startswith("```"):
@@ -39,6 +46,7 @@ def clean_json_string(raw_text: str) -> str:
         raw_text = raw_text[:-3]
         
     return raw_text.strip()
+
 
 class HybridRAGRouter:
     def __init__(self):
@@ -51,10 +59,11 @@ class HybridRAGRouter:
 
         # LLM (Groq Llama-3.3-70B)
         self.llm = ChatGroq(
-            api_key=GROQ_API_KEY,
+            groq_api_key=GROQ_API_KEY,
             model_name="llama-3.3-70b-versatile",
             temperature=0.7
         )
+
 
 
 
@@ -144,7 +153,9 @@ class HybridRAGRouter:
             return json.loads(clean_json)
         except json.JSONDecodeError as e:
             logger.error(f"JSON Output Parsing Error: {e}")
+            logger.error(f"RAW LLM OUTPUT (FAILED PARSE): {raw_output}")
             raise
+
 
 
 
