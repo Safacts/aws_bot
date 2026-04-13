@@ -7,12 +7,13 @@ from typing import Dict, Any
 
 
 from langchain_google_genai import ChatGoogleGenerativeAI, GoogleGenerativeAIEmbeddings
-from langchain_community.chat_models import ChatOllama
 from langchain_community.vectorstores import Chroma
+
 from langchain_core.prompts import PromptTemplate
 from langchain_core.output_parsers import JsonOutputParser
 
-from config import GEMINI_API_KEY, OLLAMA_BASE_URL
+from config import GEMINI_API_KEY
+
 
 logger = logging.getLogger(__name__)
 
@@ -47,7 +48,7 @@ class HybridRAGRouter:
 
         # LLMs
         self.gemini = ChatGoogleGenerativeAI(
-            model="gemini-2.5-flash-lite", 
+            model="gemini-2.0-flash", 
             google_api_key=GEMINI_API_KEY,
             temperature=0.8
         )
@@ -55,11 +56,8 @@ class HybridRAGRouter:
 
 
 
-        self.ollama = ChatOllama(
-            model="llama3.2:latest", 
-            base_url=OLLAMA_BASE_URL,
-            temperature=0.8
-        )
+
+
         
         # System prompts (Krishna Persona)
         # System prompts (Krishna Persona with Technical Rigor)
@@ -94,30 +92,14 @@ class HybridRAGRouter:
 
 
 
-    async def _invoke_with_fallback(self, prompt_text: str) -> str:
-        """Invokes Gemini primarily, with seamless fallback to local Ollama."""
-        try:
-            logger.info("Attempting inference with Gemini (gemini-2.5-flash-lite)...")
+    async def _invoke_gemini(self, prompt_text: str) -> str:
+        """Invokes Gemini primarily. No internal fallback to ensure 429 logic in worker."""
+        logger.info("Attempting inference with Gemini (gemini-2.0-flash)...")
+        response = await self.gemini.ainvoke(prompt_text)
+        return response.content
 
 
-            response = await self.gemini.ainvoke(prompt_text)
-            return response.content
-        except EXHAUSTED_EXC as e:
-            logger.warning(f"Gemini API Quota Exhausted (429): {e}. Switching to local Ollama.")
-            return await self._invoke_ollama(prompt_text)
-        except Exception as e:
-            logger.warning(f"Primary LLM (Gemini) failed: {e}. Falling back to Ollama.")
-            return await self._invoke_ollama(prompt_text)
 
-    async def _invoke_ollama(self, prompt_text: str) -> str:
-        """Helper to invoke local Ollama LLM."""
-        try:
-            logger.info("Attempting inference with local Ollama (llama3.2)...")
-            response = await self.ollama.ainvoke(prompt_text)
-            return response.content
-        except Exception as ollama_err:
-            logger.error(f"Critical Failure: Both Gemini and Ollama are offline. {ollama_err}")
-            raise
 
 
     async def generate_question(self, domain: str) -> Dict[str, Any]:
@@ -140,7 +122,8 @@ class HybridRAGRouter:
         # 3. Generate content using LLM (with its own fallback)
         seed = str(uuid.uuid4())
         prompt_text = self.quiz_prompt.format(domain=domain, context=context, seed=seed)
-        raw_output = await self._invoke_with_fallback(prompt_text)
+        raw_output = await self._invoke_gemini(prompt_text)
+
 
         
         # 4. Final parsing
@@ -151,28 +134,7 @@ class HybridRAGRouter:
             logger.error(f"JSON Output Parsing Error: {e}")
             raise
 
-    async def generate_question_ollama(self, domain: str) -> Dict[str, Any]:
-        """Worker-only direct local generation to bypass Google API/Gemini limits entirely."""
-        context = ""
-        try:
-            all_docs = self.retriever.invoke(domain)
-            random.shuffle(all_docs)
-            selected_docs = all_docs[:3]
-            context = "\n\n".join([d.page_content for d in selected_docs])
-        except Exception:
-            context = "NO DOCUMENTATION CONTEXT AVAILABLE."
 
-        seed = str(uuid.uuid4())
-        prompt_text = self.quiz_prompt.format(domain=domain, context=context, seed=seed)
-        raw_output = await self._invoke_ollama(prompt_text)
-
-        
-        clean_json = clean_json_string(raw_output)
-        try:
-            return json.loads(clean_json)
-        except json.JSONDecodeError as e:
-            logger.error(f"Ollama Question Error: {e}")
-            raise
 
 
     async def generate_summary(self, domain: str) -> str:
@@ -185,7 +147,8 @@ class HybridRAGRouter:
             context = "General knowledge summary."
 
         prompt_text = self.summary_prompt.format(domain=domain, context=context)
-        return await self._invoke_with_fallback(prompt_text)
+        return await self._invoke_gemini(prompt_text)
+
 
 # Singleton instance
 rag_router = HybridRAGRouter()
