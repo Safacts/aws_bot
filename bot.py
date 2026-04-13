@@ -11,9 +11,11 @@ from telegram.ext import (
 
 
 import json
+import httpx
 import telegram.error
 from sqlalchemy import select, func
-from config import BOT_TOKEN, AWS_DOMAINS, STREAK_TARGET, WRONG_TARGET
+from config import BOT_TOKEN, AWS_DOMAINS, STREAK_TARGET, WRONG_TARGET, ADMIN_BOT_TOKEN, ADMIN_CHAT_ID
+
 
 
 from database import init_db, get_or_create_user, save_user, AsyncSessionLocal, QuestionBank
@@ -26,6 +28,21 @@ logging.basicConfig(
     level=logging.INFO
 )
 logger = logging.getLogger(__name__)
+
+async def send_admin_report(message_text: str):
+    """Silently pings the Admin bot with a status update."""
+    if not ADMIN_BOT_TOKEN or not ADMIN_CHAT_ID:
+        return
+        
+    try:
+        async with httpx.AsyncClient() as client:
+            url = f"https://api.telegram.org/bot{ADMIN_BOT_TOKEN}/sendMessage"
+            payload = {"chat_id": ADMIN_CHAT_ID, "text": message_text}
+            await client.post(url, json=payload, timeout=5.0)
+            logger.info("Admin report sent successfully.")
+    except Exception as e:
+        logger.error(f"Failed to send admin report: {e}")
+
 
 async def ask_next_question(chat_id: int, user_id: int, context: ContextTypes.DEFAULT_TYPE, retry_count: int = 0):
     """Fetches a generated question and sends it to the user with retry logic."""
@@ -154,6 +171,10 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     await context.bot.send_message(chat_id=chat_id, text=welcome_text)
     await ask_next_question(chat_id, user.id, context)
+    
+    # Ping admin bot
+    await send_admin_report(f"🚀 User {user.first_name} started a study session! Total questions asked so far: {user_prog.questions_asked}")
+
 
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Displays help information about the bot."""
@@ -307,10 +328,15 @@ async def receive_poll_answer(update: Update, context: ContextTypes.DEFAULT_TYPE
         if user.current_correct_streak >= STREAK_TARGET:
             user.current_topic_index += 1
             user.current_correct_streak = 0
+            
+            new_domain = AWS_DOMAINS[user.current_topic_index] if user.current_topic_index < len(AWS_DOMAINS) else "Mastery"
+            await send_admin_report(f"🌟 User {user.first_name} just leveled up to {new_domain}! Total correct: {user.correct_answers}")
+            
             await context.bot.send_message(
                 chat_id=chat_id,
                 text="🌟 **Level Up!** 🌟\nYou've mastered this domain! Use the buttons above or /menu to continue."
             )
+
             
     else:
         user.current_wrong_streak += 1
@@ -320,7 +346,11 @@ async def receive_poll_answer(update: Update, context: ContextTypes.DEFAULT_TYPE
             current_domain = AWS_DOMAINS[user.current_topic_index] if user.current_topic_index < len(AWS_DOMAINS) else "Unknown"
             user.current_wrong_streak = 0 
             
+            # Ping admin bot
+            await send_admin_report(f"⚠️ User {user.first_name} is struggling with {current_domain}. Triggered a summary.")
+
             await context.bot.send_message(
+
                 chat_id=chat_id,
                 text="It looks like you're struggling a bit. Reach out for the summary in the menu or continue practicing."
             )
