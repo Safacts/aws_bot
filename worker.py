@@ -44,13 +44,16 @@ async def pregenerate_questions():
                             await session.commit()
                             logger.info(f"Worker: Successfully added question for '{domain}'.")
                         except Exception as e:
-                            logger.warning(f"Worker: Error during generation for {domain} (Ollama might have returned invalid JSON): {e}")
+                            logger.warning(f"Worker generation skipped due to error: {e}")
                             await session.rollback()
                             continue
                     else:
-                        logger.info(f"Worker: Sufficient stock for '{domain}' ({count}). Skipping.")
+                        logger.info(f"Worker: Sufficient stock for '{domain}' ({count}). Sleeping 5s to prevent log flood.")
+                        await asyncio.sleep(5)
+                        continue
             except Exception as outer_e:
                 logger.error(f"Worker: Critical session error for {domain}: {outer_e}")
+
 
             
             # No delay—maximizing local hardware speed as requested
