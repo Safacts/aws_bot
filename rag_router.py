@@ -75,7 +75,10 @@ class HybridRAGRouter:
         # System prompts (Krishna Persona)
         # System prompts (Krishna Persona with Technical Rigor)
         self.quiz_prompt = PromptTemplate.from_template(
-            "You are a Senior AWS Content Specialist for the CLF-C02 Exam. "
+            "You are a Senior AWS Content Specialist for the CLF-C02 Exam.\n"
+            "CRITICAL: You are an API. Your response must contain NOTHING except the JSON block. "
+            "Do not say 'Partha', 'Greetings', or 'Here is your question' outside of the JSON. "
+            "If you include any text outside the curly braces, the system will crash.\n\n"
             "Task: Generate ONE high-fidelity, scenario-based multiple-choice question for the domain: {domain}.\n\n"
             "STRICT GENERATION RULES:\n"
             "1. NO TRIVIA: Do NOT ask 'What is X?' Ask: 'A company has [Scenario]. They need to achieve [Requirement]. Which service or strategy should they use?'\n"
@@ -87,8 +90,8 @@ class HybridRAGRouter:
             "4. PLAUSIBLE DISTRACTORS: Wrong options must be real, existing AWS services that are relevant to the domain but architecturally incorrect for this specific scenario.\n"
             "5. NO LABELS: Ensure there are NO 'GREETING:' or 'TECHNICAL:' labels in the output.\n\n"
             "FORMAT & PERSONA:\n"
-            "- 'explanation' MUST be a single, cohesive paragraph.\n"
-            "- Seamlessly blend a brief, warm word of wisdom from Lord Krishna to Partha with a cold, professional architectural breakdown. Do NOT separate them with labels.\n\n"
+            "- The 'explanation' field must start with a one-sentence greeting from Lord Krishna to Partha (e.g., 'Stay focused, Partha...'), immediately followed by a professional, technical AWS architectural explanation.\n"
+            "- Do NOT include the persona in any other part of the JSON.\n\n"
             "CRITICAL: The `question` string MUST be concise and UNDER 250 CHARACTERS. "
             "Input Random Seed (Unique per request): {seed}\n\n"
             "Output response ONLY as a valid JSON object:\n"
@@ -99,6 +102,7 @@ class HybridRAGRouter:
             "  \"explanation\": \"...\"\n"
             "}}"
         )
+
 
 
 
@@ -147,12 +151,11 @@ class HybridRAGRouter:
         seed = str(uuid.uuid4())
         prompt_text = self.quiz_prompt.format(domain=domain, context=context, seed=seed)
         raw_output = await self._invoke_llm(prompt_text)
-
-
-
         
         # 4. Final parsing
+        raw_output = raw_output.strip()
         clean_json = clean_json_string(raw_output)
+
         try:
             return json.loads(clean_json)
         except json.JSONDecodeError as e:
