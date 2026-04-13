@@ -28,24 +28,7 @@ services:
 
     restart: unless-stopped
 
-  worker:
-    build: .
-    container_name: aws_tutor_worker
-    command: python worker.py
-    depends_on:
-      aws_tutor_db:
-        condition: service_healthy
-    env_file:
-      - .env
-    environment:
-      <<: *common-env
-    volumes:
-      - ./chroma_db:/app/chroma_db
-    networks:
-      - default
-      - shared_net
 
-    restart: unless-stopped
 
   admin_bot:
     build: .
@@ -78,7 +61,7 @@ services:
     networks:
       - default
       - shared_net
-    restart: "no"
+
 
 
 
