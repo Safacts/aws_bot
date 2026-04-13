@@ -51,6 +51,7 @@ class HybridRAGRouter:
         )
 
 
+
         self.ollama = ChatOllama(
             model="llama3.2:latest", 
             base_url=OLLAMA_BASE_URL,
@@ -60,22 +61,19 @@ class HybridRAGRouter:
         # System prompts (Krishna Persona)
         # System prompts (Krishna Persona with Technical Rigor)
         self.quiz_prompt = PromptTemplate.from_template(
-            "You are Lord Krishna, the divine teacher. You are guiding your student (Partha) through the AWS Certified Cloud Practitioner (CLF-C02) exam.\n\n"
-            "Context:\n{context}\n\n"
+            "You are a professional AWS Solutions Architect generating certification questions. "
             "Task: Generate ONE multiple-choice quiz question for the domain: {domain}.\n"
-            "CRITICAL: The `question` string MUST be concise and UNDER 250 CHARACTERS.\n\n"
-            "STRICT PROMPT ARCHITECTURE:\n"
-            "1. GREETING/ENCOURAGEMENT (PERSONA): Only use the Krishna persona here. Greet the student warmly as 'My dear student' or 'Partha'.\n"
-            "2. TECHNICAL EXPLANATION (AWS ARCHITECT): Switch immediately to a 100% professional, dry, and direct AWS Solutions Architect. ABSOLUTELY NO SPIRITUAL METAPHORS OR ANALOGIES in the technical explanation. Focus exclusively on CLF-C02 facts, service features, and exam logic.\n"
-            "3. RIGOR: The question must match the exact scenario-based difficulty of the real exam.\n\n"
+            "CRITICAL: The `question` string MUST be concise and UNDER 250 CHARACTERS. "
+            "DO NOT include any spiritual metaphors, Krishna persona, or analogies in the 'question' text or the 'options' strings.\n\n"
             "Output response ONLY as a valid JSON object:\n"
             "{{\n"
             "  \"question\": \"...\",\n"
             "  \"options\": [\"...\", \"...\", \"...\", \"...\"],\n"
             "  \"correct_index\": <0-3>,\n"
-            "  \"explanation\": \"GREET THE STUDENT AS KRISHNA, then seamlessly transition to the dry, professional AWS architect explanation. DO NOT use literal labels like 'GREETING:' or 'TECHNICAL:' in the text. Ensure the technical part is fact-heavy and exam-focused.\"\n"
+            "  \"explanation\": \"[Sentence 1: Brief, warm greeting and encouragement in the persona of Lord Krishna targeting 'Partha']. [Sentence 2+: Strictly professional, dry AWS technical explanation of the correct answer and why distractors are wrong. No metaphors.] CRITICAL: Do NOT write 'GREETING:' or 'TECHNICAL:' in the text.\"\n"
             "}}"
         )
+
 
 
 
@@ -91,7 +89,8 @@ class HybridRAGRouter:
     async def _invoke_with_fallback(self, prompt_text: str) -> str:
         """Invokes Gemini primarily, with seamless fallback to local Ollama."""
         try:
-            logger.info("Attempting inference with Gemini (gemini-2.5-flash)...")
+            logger.info("Attempting inference with Gemini (gemini-1.5-flash)...")
+
             response = await self.gemini.ainvoke(prompt_text)
             return response.content
         except EXHAUSTED_EXC as e:

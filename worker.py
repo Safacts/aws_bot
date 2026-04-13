@@ -19,6 +19,7 @@ async def pregenerate_questions():
     await init_db()
     
     while True:
+        any_work_done = False
         for domain in AWS_DOMAINS:
             try:
                 async with AsyncSessionLocal() as session:
@@ -32,8 +33,8 @@ async def pregenerate_questions():
                     
                     if count < 1000:
                         try:
-                            logger.info(f"Worker: Level low for '{domain}' ({count}/1000). Generating with local Ollama...")
-                            question_data = await rag_router.generate_question_ollama(domain)
+                            logger.info(f"Worker: Priority set to '{domain}' ({count}/1000). Generating with Gemini...")
+                            question_data = await rag_router.generate_question(domain)
                             
                             new_q = QuestionBank(
                                 domain=domain,
@@ -43,16 +44,34 @@ async def pregenerate_questions():
                             session.add(new_q)
                             await session.commit()
                             logger.info(f"Worker: Successfully added question for '{domain}'.")
+                            
+                            # Sequential Lock: Immediately break to restart from Domain 1
+                            any_work_done = True
+                            await asyncio.sleep(6) # 10 RPM pacing
+                            break
                         except Exception as e:
-                            logger.warning(f"Worker generation skipped due to error: {e}")
+                            err_msg = str(e).lower()
+                            if "429" in err_msg or "exhausted" in err_msg:
+                                logger.warning("🛑 Quota Exhausted (429)! Sleeping for 1 hour to cool down...")
+                                await asyncio.sleep(3600)
+                            else:
+                                logger.warning(f"⚠️ Worker generation skipped due to error: {e}")
+                                await asyncio.sleep(6)
+                            
                             await session.rollback()
-                            continue
-                    else:
-                        logger.info(f"Worker: Sufficient stock for '{domain}' ({count}). Sleeping 5s to prevent log flood.")
-                        await asyncio.sleep(5)
-                        continue
+                            any_work_done = True # We tried, so we break to restart
+                            break
             except Exception as outer_e:
                 logger.error(f"Worker: Critical session error for {domain}: {outer_e}")
+                await asyncio.sleep(10)
+                any_work_done = True
+                break
+        
+        if not any_work_done:
+            # If we went through all domains and none were < 1000
+            logger.info("✅ All domains have 1000+ questions. Sleeping for 1 hour before next sweep.")
+            await asyncio.sleep(3600)
+
 
 
             
