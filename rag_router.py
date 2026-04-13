@@ -2,7 +2,9 @@ import json
 import logging
 import re
 import random
+import uuid
 from typing import Dict, Any
+
 
 from langchain_google_genai import ChatGoogleGenerativeAI, GoogleGenerativeAIEmbeddings
 from langchain_community.chat_models import ChatOllama
@@ -64,8 +66,12 @@ class HybridRAGRouter:
         self.quiz_prompt = PromptTemplate.from_template(
             "You are a professional AWS Solutions Architect generating certification questions. "
             "Task: Generate ONE multiple-choice quiz question for the domain: {domain}.\n"
+            "CRITICAL INSTRUCTION: You MUST generate a complex, scenario-based question. "
+            "DO NOT generate basic definition questions (e.g., 'What is a private cloud?' or 'What is S3?'). "
+            "Create a specific, real-world AWS customer scenario. The question must be highly difficult and meet the AWS Certified Cloud Practitioner (CLF-C02) standard. NEVER repeat common questions.\n\n"
             "CRITICAL: The `question` string MUST be concise and UNDER 250 CHARACTERS. "
             "DO NOT include any spiritual metaphors, Krishna persona, or analogies in the 'question' text or the 'options' strings.\n\n"
+            "Input Random Seed (Unique per request): {seed}\n\n"
             "Output response ONLY as a valid JSON object:\n"
             "{{\n"
             "  \"question\": \"...\",\n"
@@ -74,6 +80,7 @@ class HybridRAGRouter:
             "  \"explanation\": \"[Sentence 1: Brief, warm greeting and encouragement in the persona of Lord Krishna targeting 'Partha']. [Sentence 2+: Strictly professional, dry AWS technical explanation of the correct answer and why distractors are wrong. No metaphors.] CRITICAL: Do NOT write 'GREETING:' or 'TECHNICAL:' in the text.\"\n"
             "}}"
         )
+
 
 
 
@@ -131,8 +138,10 @@ class HybridRAGRouter:
             context = "NO DOCUMENTATION CONTEXT AVAILABLE."
 
         # 3. Generate content using LLM (with its own fallback)
-        prompt_text = self.quiz_prompt.format(domain=domain, context=context)
+        seed = str(uuid.uuid4())
+        prompt_text = self.quiz_prompt.format(domain=domain, context=context, seed=seed)
         raw_output = await self._invoke_with_fallback(prompt_text)
+
         
         # 4. Final parsing
         clean_json = clean_json_string(raw_output)
@@ -153,8 +162,10 @@ class HybridRAGRouter:
         except Exception:
             context = "NO DOCUMENTATION CONTEXT AVAILABLE."
 
-        prompt_text = self.quiz_prompt.format(domain=domain, context=context)
+        seed = str(uuid.uuid4())
+        prompt_text = self.quiz_prompt.format(domain=domain, context=context, seed=seed)
         raw_output = await self._invoke_ollama(prompt_text)
+
         
         clean_json = clean_json_string(raw_output)
         try:

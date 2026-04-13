@@ -31,9 +31,10 @@ async def pregenerate_questions():
                     result = await session.execute(stmt)
                     count = result.scalar()
                     
-                    if count < 1000:
+                    if count < 100:
                         try:
-                            logger.info(f"Worker: Priority set to '{domain}' ({count}/1000). Generating with Gemini...")
+                            logger.info(f"Worker: Priority set to '{domain}' ({count}/100). Generating with Gemini...")
+
                             question_data = await rag_router.generate_question(domain)
                             
                             new_q = QuestionBank(
@@ -68,9 +69,10 @@ async def pregenerate_questions():
                 break
         
         if not any_work_done:
-            # If we went through all domains and none were < 1000
-            logger.info("✅ All domains have 1000+ questions. Sleeping for 1 hour before next sweep.")
+            # If we went through all domains and none were < 100
+            logger.info("✅ All domains have 100+ questions. Sleeping for 1 hour before next sweep.")
             await asyncio.sleep(3600)
+
 
 
 
