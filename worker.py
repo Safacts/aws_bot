@@ -31,21 +31,27 @@ async def pregenerate_questions():
                     count = result.scalar()
                     
                     if count < 1000:
-                        logger.info(f"Worker: Level low for '{domain}' ({count}/1000). Generating with local Ollama...")
-                        question_data = await rag_router.generate_question_ollama(domain)
-                        
-                        new_q = QuestionBank(
-                            domain=domain,
-                            question_data=json.dumps(question_data),
-                            is_used=0
-                        )
-                        session.add(new_q)
-                        await session.commit()
-                        logger.info(f"Worker: Successfully added question for '{domain}'.")
+                        try:
+                            logger.info(f"Worker: Level low for '{domain}' ({count}/1000). Generating with local Ollama...")
+                            question_data = await rag_router.generate_question_ollama(domain)
+                            
+                            new_q = QuestionBank(
+                                domain=domain,
+                                question_data=json.dumps(question_data),
+                                is_used=0
+                            )
+                            session.add(new_q)
+                            await session.commit()
+                            logger.info(f"Worker: Successfully added question for '{domain}'.")
+                        except Exception as e:
+                            logger.warning(f"Worker: Error during generation for {domain} (Ollama might have returned invalid JSON): {e}")
+                            await session.rollback()
+                            continue
                     else:
                         logger.info(f"Worker: Sufficient stock for '{domain}' ({count}). Skipping.")
-            except Exception as e:
-                logger.error(f"Worker error during generation for {domain}: {e}")
+            except Exception as outer_e:
+                logger.error(f"Worker: Critical session error for {domain}: {outer_e}")
+
             
             # No delay—maximizing local hardware speed as requested
 

@@ -73,9 +73,10 @@ class HybridRAGRouter:
             "  \"question\": \"...\",\n"
             "  \"options\": [\"...\", \"...\", \"...\", \"...\"],\n"
             "  \"correct_index\": <0-3>,\n"
-            "  \"explanation\": \"GREETING: [Krishna persona greeting]. TECHNICAL: [Professional AWS architect explanation of the correct answer and why distractors are wrong. No metaphors.]\"\n"
+            "  \"explanation\": \"GREET THE STUDENT AS KRISHNA, then seamlessly transition to the dry, professional AWS architect explanation. DO NOT use literal labels like 'GREETING:' or 'TECHNICAL:' in the text. Ensure the technical part is fact-heavy and exam-focused.\"\n"
             "}}"
         )
+
 
 
         self.summary_prompt = PromptTemplate.from_template(
