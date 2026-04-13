@@ -12,7 +12,8 @@ from langchain_community.vectorstores import Chroma
 
 
 from langchain_core.prompts import PromptTemplate
-from langchain_core.output_parsers import JsonOutputParser
+from langchain_core.messages import SystemMessage, HumanMessage
+
 
 from config import GEMINI_API_KEY, GROQ_API_KEY
 
@@ -27,25 +28,20 @@ try:
 except ImportError:
     EXHAUSTED_EXC = Exception
 
-def clean_json_string(raw_text: str) -> str:
-    """Uses regex to extract the first valid JSON object from the LLM output."""
-    raw_text = raw_text.strip()
+def clean_json_string(raw: str) -> str:
+    """Extracts JSON block from text, handling markdown fences and garbage."""
+    raw = raw.strip()
+    if "```" in raw:
+        # Remove markdown fences regardless of language label
+        raw = re.sub(r"```(?:json)?", "", raw).strip().rstrip("`").strip()
     
-    # Use re.search to find the first '{' and last '}'
-    match = re.search(r'(\{.*\})', raw_text, re.DOTALL)
-    if match:
-        return match.group(0).strip()
-    
-    # Fallback to simple stripping if regex fails
-    if raw_text.startswith("```json"):
-        raw_text = raw_text[7:]
-    elif raw_text.startswith("```"):
-        raw_text = raw_text[3:]
-        
-    if raw_text.endswith("```"):
-        raw_text = raw_text[:-3]
-        
-    return raw_text.strip()
+    # Locate the first '{' and the last '}'
+    start = raw.find("{")
+    end = raw.rfind("}")
+    if start != -1 and end != -1 and end > start:
+        return raw[start:end + 1]
+    return raw
+
 
 
 class HybridRAGRouter:
@@ -119,11 +115,20 @@ class HybridRAGRouter:
 
 
 
-    async def _invoke_llm(self, prompt_text: str) -> str:
-        """Invokes Groq LLM primarily."""
+    async def _invoke_llm(self, prompt_text: str, system_instruction: str = None) -> str:
+        """Invokes Groq LLM with a System + Human message structure."""
+        if not system_instruction:
+            system_instruction = "You are an AWS exam question generator. You output ONLY valid JSON. No preamble, no text outside the JSON object, no markdown fences."
+            
+        messages = [
+            SystemMessage(content=system_instruction),
+            HumanMessage(content=prompt_text)
+        ]
+        
         logger.info("Attempting inference with Groq (llama-3.3-70b-versatile)...")
-        response = await self.llm.ainvoke(prompt_text)
+        response = await self.llm.ainvoke(messages)
         return response.content
+
 
 
 
@@ -157,11 +162,25 @@ class HybridRAGRouter:
         clean_json = clean_json_string(raw_output)
 
         try:
-            return json.loads(clean_json)
-        except json.JSONDecodeError as e:
-            logger.error(f"JSON Output Parsing Error: {e}")
+            data = json.loads(clean_json)
+            
+            # --- VALIDATION & CLAMPING (Fix 3) ---
+            # Truncate strings to stay within Telegram Poll limits
+            data["options"] = [str(o)[:99] for o in data["options"]]
+            data["question"] = str(data["question"])[:299]
+            
+            # Integrity checks
+            if len(data["options"]) != 4:
+                raise ValueError("Expected 4 options")
+            if not isinstance(data.get("correct_index"), int) or not (0 <= data["correct_index"] <= 3):
+                raise ValueError("Invalid correct_index")
+                
+            return data
+        except (json.JSONDecodeError, ValueError, KeyError) as e:
+            logger.error(f"JSON Output Parsing/Validation Error: {e}")
             logger.error(f"RAW LLM OUTPUT (FAILED PARSE): {raw_output}")
             raise
+
 
 
 
@@ -177,7 +196,9 @@ class HybridRAGRouter:
             context = "General knowledge summary."
 
         prompt_text = self.summary_prompt.format(domain=domain, context=context)
-        return await self._invoke_llm(prompt_text)
+        system_instruction = "You are a professional AWS Solutions Architect and expert instructor."
+        return await self._invoke_llm(prompt_text, system_instruction=system_instruction)
+
 
 
 

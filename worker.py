@@ -1,6 +1,6 @@
 import asyncio
-import logging
 import json
+import logging
 from sqlalchemy import select, func
 from database import AsyncSessionLocal, QuestionBank, init_db
 from rag_router import rag_router
@@ -8,83 +8,86 @@ from config import AWS_DOMAINS
 
 # Setup logging
 logging.basicConfig(
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
     level=logging.INFO
 )
 logger = logging.getLogger(__name__)
 
-async def pregenerate_questions():
-    """Background loop to pre-generate questions for each domain."""
-    logger.info("Worker: Starting background generator...")
+# Constants (Logic from user request)
+STOCKPILE_TARGET = 100
+SLEEP_BETWEEN_GENERATIONS = 4   # seconds — stays under Groq's 30 RPM free limit
+SLEEP_ON_ERROR = 10              # seconds — short retry on parse errors
+SLEEP_ON_RATE_LIMIT = 60        # seconds — back off on 429
+
+async def get_stock(domain: str) -> int:
+    """Async safely counts unused questions for a domain."""
+    async with AsyncSessionLocal() as session:
+        stmt = select(func.count()).select_from(QuestionBank).where(
+            QuestionBank.domain == domain,
+            QuestionBank.is_used == 0
+        )
+        result = await session.execute(stmt)
+        return result.scalar()
+
+async def run_worker():
+    """Background loop to pre-generate questions with sequential priority."""
+    logger.info("Worker: Starting background generator (Async Priority Sweep)...")
     await init_db()
-    
+
     while True:
-        any_work_done = False
+        generated_any = False
+
         for domain in AWS_DOMAINS:
+            stock = await get_stock(domain)
+
+            if stock >= STOCKPILE_TARGET:
+                logger.debug(f"Worker: {domain} has {stock}/{STOCKPILE_TARGET}. Skipping.")
+                continue
+
+            logger.info(f"Worker: [{domain}] needs questions ({stock}/{STOCKPILE_TARGET}). Generating...")
+
             try:
+                question_data = await rag_router.generate_question(domain)
+
                 async with AsyncSessionLocal() as session:
-                    # Check how many unused questions we have
-                    stmt = select(func.count()).select_from(QuestionBank).where(
-                        QuestionBank.domain == domain,
-                        QuestionBank.is_used == 0
+                    entry = QuestionBank(
+                        domain=domain,
+                        question_data=json.dumps(question_data),
+                        is_used=0
                     )
-                    result = await session.execute(stmt)
-                    count = result.scalar()
-                    
-                    if count < 100:
-                        try:
-                            logger.info(f"Worker: Priority set to '{domain}' ({count}/100). Generating with Groq...")
+                    session.add(entry)
+                    await session.commit()
 
+                logger.info(f"Worker: ✅ Added question for '{domain}'. Bank now ~{stock + 1}/{STOCKPILE_TARGET}.")
+                generated_any = True
+                await asyncio.sleep(SLEEP_BETWEEN_GENERATIONS)
+                
+                # Sequential Priority Switch: Immediately restart from Domain 1
+                break 
 
-                            question_data = await rag_router.generate_question(domain)
-                            
-                            new_q = QuestionBank(
-                                domain=domain,
-                                question_data=json.dumps(question_data),
-                                is_used=0
-                            )
-                            session.add(new_q)
-                            await session.commit()
-                            logger.info(f"Worker: Successfully added question for '{domain}'.")
-                            
-                            # Sequential Lock: Immediately break to restart from Domain 1
-                            any_work_done = True
-                            await asyncio.sleep(4) # 15 RPM pacing
-                            break
-                        except Exception as e:
-                            err_msg = str(e).lower()
-                            if "429" in err_msg or "exhausted" in err_msg:
-                                logger.warning("🛑 Rate Limit Hit (429)! Sleeping for 60 seconds to cool down...")
-                                await asyncio.sleep(60)
-                            else:
-                                logger.warning(f"⚠️ Worker generation skipped due to error: {e}")
-                                await asyncio.sleep(4)
-
-                            
-                            await session.rollback()
-                            any_work_done = True # We tried, so we break to restart
-                            break
-            except Exception as outer_e:
-                logger.error(f"Worker: Critical session error for {domain}: {outer_e}")
-                await asyncio.sleep(10)
-                any_work_done = True
+            except Exception as e:
+                err_str = str(e).lower()
+                if "429" in err_str or "rate limit" in err_str or "quota" in err_str:
+                    logger.warning(f"Worker: ⏳ Rate limited on '{domain}'. Sleeping {SLEEP_ON_RATE_LIMIT}s...")
+                    await asyncio.sleep(SLEEP_ON_RATE_LIMIT)
+                else:
+                    logger.warning(f"Worker: ⚠️ Generation error for '{domain}': {e}. Retrying in {SLEEP_ON_ERROR}s...")
+                    await asyncio.sleep(SLEEP_ON_ERROR)
+                
+                # Restart priority loop even on error to re-assess priority
                 break
-        
-        if not any_work_done:
-            # If we went through all domains and none were < 100
-            logger.info("✅ All domains have 100+ questions. Sleeping for 1 hour before next sweep.")
-            await asyncio.sleep(3600)
 
-
-
-
-            
-            # No delay—maximizing local hardware speed as requested
-
-
+        if not generated_any:
+            # All domains are full — sleep longer to avoid busy-spinning
+            stocks_info = {}
+            for d in AWS_DOMAINS:
+                stocks_info[d] = await get_stock(d)
+                
+            logger.info(f"Worker: All domains at target (100). Stocks: {stocks_info}. Sleeping 30s...")
+            await asyncio.sleep(30)
 
 if __name__ == "__main__":
     try:
-        asyncio.run(pregenerate_questions())
+        asyncio.run(run_worker())
     except KeyboardInterrupt:
         logger.info("Worker stopped manually.")
