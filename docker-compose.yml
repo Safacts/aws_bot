@@ -64,6 +64,23 @@ services:
 
     restart: unless-stopped
 
+  seeder:
+    build: .
+    container_name: aws_tutor_seeder
+    command: python seed_questions.py
+    depends_on:
+      aws_tutor_db:
+        condition: service_healthy
+    env_file:
+      - .env
+    environment:
+      <<: *common-env
+    networks:
+      - default
+      - shared_net
+    restart: "no"
+
+
 
 
   aws_tutor_db:
