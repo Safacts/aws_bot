@@ -33,7 +33,8 @@ async def pregenerate_questions():
                     
                     if count < 100:
                         try:
-                            logger.info(f"Worker: Priority set to '{domain}' ({count}/100). Generating with Gemini...")
+                            logger.info(f"Worker: Priority set to '{domain}' ({count}/100). Generating with Groq...")
+
 
                             question_data = await rag_router.generate_question(domain)
                             
@@ -48,16 +49,17 @@ async def pregenerate_questions():
                             
                             # Sequential Lock: Immediately break to restart from Domain 1
                             any_work_done = True
-                            await asyncio.sleep(6) # 10 RPM pacing
+                            await asyncio.sleep(4) # 15 RPM pacing
                             break
                         except Exception as e:
                             err_msg = str(e).lower()
                             if "429" in err_msg or "exhausted" in err_msg:
-                                logger.warning("🛑 Quota Exhausted (429)! Sleeping for 1 hour to cool down...")
-                                await asyncio.sleep(3600)
+                                logger.warning("🛑 Rate Limit Hit (429)! Sleeping for 60 seconds to cool down...")
+                                await asyncio.sleep(60)
                             else:
                                 logger.warning(f"⚠️ Worker generation skipped due to error: {e}")
-                                await asyncio.sleep(6)
+                                await asyncio.sleep(4)
+
                             
                             await session.rollback()
                             any_work_done = True # We tried, so we break to restart

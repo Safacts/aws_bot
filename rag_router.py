@@ -6,13 +6,16 @@ import uuid
 from typing import Dict, Any
 
 
-from langchain_google_genai import ChatGoogleGenerativeAI, GoogleGenerativeAIEmbeddings
+from langchain_google_genai import GoogleGenerativeAIEmbeddings
+from langchain_groq import ChatGroq
 from langchain_community.vectorstores import Chroma
+
 
 from langchain_core.prompts import PromptTemplate
 from langchain_core.output_parsers import JsonOutputParser
 
-from config import GEMINI_API_KEY
+from config import GEMINI_API_KEY, GROQ_API_KEY
+
 
 
 logger = logging.getLogger(__name__)
@@ -46,12 +49,13 @@ class HybridRAGRouter:
         # Fetching more chunks to allow for randomization later
         self.retriever = self.vectorstore.as_retriever(search_kwargs={"k": 10})
 
-        # LLMs
-        self.gemini = ChatGoogleGenerativeAI(
-            model="gemini-2.0-flash", 
-            google_api_key=GEMINI_API_KEY,
-            temperature=0.8
+        # LLM (Groq Llama-3.3-70B)
+        self.llm = ChatGroq(
+            api_key=GROQ_API_KEY,
+            model_name="llama-3.3-70b-versatile",
+            temperature=0.7
         )
+
 
 
 
@@ -92,11 +96,12 @@ class HybridRAGRouter:
 
 
 
-    async def _invoke_gemini(self, prompt_text: str) -> str:
-        """Invokes Gemini primarily. No internal fallback to ensure 429 logic in worker."""
-        logger.info("Attempting inference with Gemini (gemini-2.0-flash)...")
-        response = await self.gemini.ainvoke(prompt_text)
+    async def _invoke_llm(self, prompt_text: str) -> str:
+        """Invokes Groq LLM primarily."""
+        logger.info("Attempting inference with Groq (llama-3.3-70b-versatile)...")
+        response = await self.llm.ainvoke(prompt_text)
         return response.content
+
 
 
 
@@ -122,7 +127,8 @@ class HybridRAGRouter:
         # 3. Generate content using LLM (with its own fallback)
         seed = str(uuid.uuid4())
         prompt_text = self.quiz_prompt.format(domain=domain, context=context, seed=seed)
-        raw_output = await self._invoke_gemini(prompt_text)
+        raw_output = await self._invoke_llm(prompt_text)
+
 
 
         
@@ -147,7 +153,8 @@ class HybridRAGRouter:
             context = "General knowledge summary."
 
         prompt_text = self.summary_prompt.format(domain=domain, context=context)
-        return await self._invoke_gemini(prompt_text)
+        return await self._invoke_llm(prompt_text)
+
 
 
 # Singleton instance

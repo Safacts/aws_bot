@@ -12,6 +12,9 @@ GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 if not GEMINI_API_KEY:
     raise ValueError("GEMINI_API_KEY environment variable not set")
 
+GROQ_API_KEY = os.getenv("GROQ_API_KEY")
+
+
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite+aiosqlite:///fallback.db")
 OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "http://sakhi_engine:11434")
 
