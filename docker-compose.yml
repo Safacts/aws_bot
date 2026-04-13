@@ -23,7 +23,9 @@ services:
     volumes:
       - ./chroma_db:/app/chroma_db
     networks:
+      - default
       - shared_net
+
     restart: unless-stopped
 
   worker:
@@ -40,7 +42,9 @@ services:
     volumes:
       - ./chroma_db:/app/chroma_db
     networks:
+      - default
       - shared_net
+
     restart: unless-stopped
 
   admin_bot:
@@ -55,7 +59,9 @@ services:
     environment:
       <<: *common-env
     networks:
+      - default
       - shared_net
+
     restart: unless-stopped
 
 
@@ -70,7 +76,9 @@ services:
     volumes:
       - aws_tutor_pgdata:/var/lib/postgresql/data
     networks:
+      - default
       - shared_net
+
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-aws_user} -d ${POSTGRES_DB:-aws_tutor}"]
       interval: 5s
@@ -82,5 +90,9 @@ volumes:
   aws_tutor_pgdata:
 
 networks:
+  default:
+    name: aws_bot_default
   shared_net:
     external: true
+    name: shared_net
+

@@ -8,7 +8,9 @@ from typing import Dict, Any
 
 from langchain_google_genai import GoogleGenerativeAIEmbeddings
 from langchain_groq import ChatGroq
+from langchain_community.chat_models import ChatOllama
 from langchain_community.vectorstores import Chroma
+
 
 
 from langchain_core.prompts import PromptTemplate
@@ -53,12 +55,25 @@ class HybridRAGRouter:
         # Fetching more chunks to allow for randomization later
         self.retriever = self.vectorstore.as_retriever(search_kwargs={"k": 10})
 
-        # LLM (Groq Llama-3.3-70B)
-        self.llm = ChatGroq(
+        # Primary LLM (Local Ollama llama3)
+        self.primary_llm = ChatOllama(
+            base_url="http://sakhi_engine:11434",
+            model="llama3",
+            temperature=0.8,
+            format="json"
+        )
+        
+        # Fallback LLM (Groq Llama-3.3-70B)
+        self.fallback_llm = ChatGroq(
             groq_api_key=GROQ_API_KEY,
             model_name="llama-3.3-70b-versatile",
-            temperature=0.7
+            temperature=0.8,
+            max_tokens=1024
         )
+        
+        # Legacy placeholder (removed direct self.llm usage)
+        self.llm = self.primary_llm
+
 
 
 
@@ -115,19 +130,28 @@ class HybridRAGRouter:
 
 
 
-    async def _invoke_llm(self, prompt_text: str, system_instruction: str = None) -> str:
-        """Invokes Groq LLM with a System + Human message structure."""
-        if not system_instruction:
-            system_instruction = "You are an AWS exam question generator. You output ONLY valid JSON. No preamble, no text outside the JSON object, no markdown fences."
-            
-        messages = [
-            SystemMessage(content=system_instruction),
-            HumanMessage(content=prompt_text)
-        ]
+    async def _invoke_llm(self, messages: list) -> str:
+        """Invokes local Ollama with a fallback to Groq."""
+        # Hardcode even stricter JSON instructions for llama3 reliability
+        system_instruction = (
+            "You are a JSON API. You output ONLY a valid JSON object. "
+            "You never write any text before or after the JSON. You never use markdown. "
+            "Your entire response is always a single JSON object starting with { and ending with }."
+        )
         
-        logger.info("Attempting inference with Groq (llama-3.3-70b-versatile)...")
-        response = await self.llm.ainvoke(messages)
-        return response.content
+        # Override the system message if it's the default question generator
+        if isinstance(messages[0], SystemMessage):
+            messages[0].content = system_instruction
+
+        try:
+            logger.info("Attempting inference with local Ollama (llama3)...")
+            response = await self.primary_llm.ainvoke(messages)
+            return response.content
+        except Exception as e:
+            logger.warning(f"Ollama failed ({e}), falling back to Groq...")
+            response = await self.fallback_llm.ainvoke(messages)
+            return response.content
+
 
 
 
@@ -155,7 +179,13 @@ class HybridRAGRouter:
         # 3. Generate content using LLM (with its own fallback)
         seed = str(uuid.uuid4())
         prompt_text = self.quiz_prompt.format(domain=domain, context=context, seed=seed)
-        raw_output = await self._invoke_llm(prompt_text)
+        
+        messages = [
+            SystemMessage(content="You are an AWS exam question generator. Output JSON only."),
+            HumanMessage(content=prompt_text)
+        ]
+        raw_output = await self._invoke_llm(messages)
+
         
         # 4. Final parsing
         raw_output = raw_output.strip()

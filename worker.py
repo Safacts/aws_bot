@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 # Constants (Logic from user request)
 STOCKPILE_TARGET = 100
-SLEEP_BETWEEN_GENERATIONS = 4   # seconds — stays under Groq's 30 RPM free limit
+SLEEP_BETWEEN_GENERATIONS = 1   # Local Ollama has no rate limit
 SLEEP_ON_ERROR = 10              # seconds — short retry on parse errors
 SLEEP_ON_RATE_LIMIT = 60        # seconds — back off on 429
 
