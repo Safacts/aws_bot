@@ -1,5 +1,8 @@
 import logging
-from sqlalchemy import Column, Integer, BigInteger, String
+import datetime
+
+from sqlalchemy import Column, Integer, BigInteger, String, DateTime, Boolean
+
 from sqlalchemy.orm import declarative_base
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.ext.asyncio import async_sessionmaker
@@ -27,6 +30,16 @@ class QuestionBank(Base):
     domain = Column(String)
     question_data = Column(String) # JSON string
     is_used = Column(Integer, default=0) # 0 = fresh, 1 = used
+
+class AnswerHistory(Base):
+    __tablename__ = 'answer_history'
+    
+    id = Column(Integer, primary_key=True)
+    user_id = Column(BigInteger)
+    domain = Column(String)
+    is_correct = Column(Boolean)
+    timestamp = Column(DateTime, default=datetime.datetime.utcnow)
+
 
 
 

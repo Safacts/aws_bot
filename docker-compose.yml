@@ -5,6 +5,9 @@ x-common-env: &common-env
   GEMINI_API_KEY: ${GEMINI_API_KEY}
   DATABASE_URL: "postgresql+asyncpg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@aws_tutor_db:5432/${POSTGRES_DB}"
   OLLAMA_BASE_URL: "http://sakhi_engine:11434"
+  ADMIN_BOT_TOKEN: ${ADMIN_BOT_TOKEN}
+  ADMIN_CHAT_ID: ${ADMIN_CHAT_ID}
+
 
 services:
   bot:
@@ -39,6 +42,22 @@ services:
     networks:
       - shared_net
     restart: unless-stopped
+
+  admin_bot:
+    build: .
+    container_name: aws_tutor_admin_bot
+    command: python admin_bot.py
+    depends_on:
+      aws_tutor_db:
+        condition: service_healthy
+    env_file:
+      - .env
+    environment:
+      <<: *common-env
+    networks:
+      - shared_net
+    restart: unless-stopped
+
 
 
   aws_tutor_db:

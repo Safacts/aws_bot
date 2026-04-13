@@ -18,7 +18,8 @@ from config import BOT_TOKEN, AWS_DOMAINS, STREAK_TARGET, WRONG_TARGET, ADMIN_BO
 
 
 
-from database import init_db, get_or_create_user, save_user, AsyncSessionLocal, QuestionBank
+from database import init_db, get_or_create_user, save_user, AsyncSessionLocal, QuestionBank, AnswerHistory
+
 
 from rag_router import rag_router
 
@@ -111,10 +112,12 @@ async def ask_next_question(chat_id: int, user_id: int, context: ContextTypes.DE
             "explanation": explanation,
             "user_id": user_id,
             "chat_id": chat_id,
-            "correct_option_id": question_data["correct_index"]
+            "correct_option_id": question_data["correct_index"],
+            "domain": current_domain
         }
         
         # Track user's active poll to prevent /start spam (avoids context.user_data crashes)
+
         if "user_active_polls" not in context.bot_data:
             context.bot_data["user_active_polls"] = {}
         context.bot_data["user_active_polls"][user_id] = poll_message.poll.id
@@ -283,8 +286,22 @@ async def receive_poll_answer(update: Update, context: ContextTypes.DEFAULT_TYPE
     is_correct = (selected_option == correct_option_id)
     
     user = await get_or_create_user(user_id)
+    current_domain = stored_data.get("domain", AWS_DOMAINS[user.current_topic_index])
+
+    # Log Answer History
+    async with AsyncSessionLocal() as session:
+        history_entry = AnswerHistory(
+            user_id=user_id,
+            domain=current_domain,
+            is_correct=is_correct
+        )
+        session.add(history_entry)
+        await session.commit()
+        logger.info(f"Logged answer history for user {user_id} in {current_domain}")
+
     
     result_prefix = "✅ **Correct!**" if is_correct else "❌ **Incorrect.**"
+
     
     # Buttons for next steps
     keyboard = [
