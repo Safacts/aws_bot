@@ -45,10 +45,11 @@ class HybridRAGRouter:
 
         # LLMs
         self.gemini = ChatGoogleGenerativeAI(
-            model="gemini-1.5-flash", 
+            model="gemini-2.5-flash-lite", 
             google_api_key=GEMINI_API_KEY,
             temperature=0.8
         )
+
 
 
 
@@ -89,7 +90,8 @@ class HybridRAGRouter:
     async def _invoke_with_fallback(self, prompt_text: str) -> str:
         """Invokes Gemini primarily, with seamless fallback to local Ollama."""
         try:
-            logger.info("Attempting inference with Gemini (gemini-1.5-flash)...")
+            logger.info("Attempting inference with Gemini (gemini-2.5-flash-lite)...")
+
 
             response = await self.gemini.ainvoke(prompt_text)
             return response.content
