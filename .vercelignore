@@ -1,0 +1,13 @@
+# Ignore all backend/bot related files
+*.py
+__pycache__
+Dockerfile
+docker-compose.yml
+requirements.txt
+.env*
+aws_docs/
+.git
+
+# Keep the web files
+!quiz.html
+!vercel.json
