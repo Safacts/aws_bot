@@ -32,10 +32,9 @@
             justify-content: center;
             align-items: center;
             overflow-x: hidden;
-            padding: 20px;
+            padding: 15px;
         }
 
-        /* Animated Background Stars */
         body::before {
             content: "";
             position: absolute;
@@ -60,6 +59,34 @@
             padding: 40px;
             box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
             position: relative;
+        }
+
+        .batch-selector {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 25px;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 5px;
+            border-radius: 14px;
+            border: 1px solid var(--glass-border);
+        }
+
+        .batch-btn {
+            flex: 1;
+            padding: 10px;
+            border-radius: 10px;
+            font-size: 0.9rem;
+            background: transparent;
+            color: var(--text-color);
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .batch-btn.active {
+            background: linear-gradient(135deg, var(--primary-accent), var(--secondary-accent));
+            color: white;
+            box-shadow: 0 4px 12px rgba(76, 201, 240, 0.2);
         }
 
         .header {
@@ -99,7 +126,7 @@
             font-size: 1.5rem;
             font-weight: 600;
             line-height: 1.4;
-            margin-bottom: 30px;
+            margin-bottom: 25px;
         }
 
         .options-grid {
@@ -209,16 +236,25 @@
         }
 
         @media (max-width: 600px) {
-            .quiz-container { padding: 25px; }
-            .question-text { font-size: 1.2rem; }
-            .header { flex-direction: column; align-items: flex-start; gap: 15px; }
-            .progress-container { margin: 10px 0; width: 100%; }
+            .quiz-container { padding: 20px; border-radius: 16px; }
+            .question-text { font-size: 1.15rem; margin-bottom: 20px; }
+            .header { flex-direction: row; align-items: center; gap: 10px; margin-bottom: 20px; }
+            .category-badge { font-size: 0.75rem; padding: 4px 10px; }
+            .progress-container { margin: 0 10px; }
+            #question-index { font-size: 0.8rem; min-width: 45px; }
+            .option { padding: 14px 18px; font-size: 0.95rem; border-radius: 12px; }
+            .batch-btn { font-size: 0.8rem; padding: 8px; }
+            .explanation-card { padding: 16px; margin-top: 20px; }
         }
     </style>
 </head>
 <body>
 
     <div class="quiz-container" id="quiz-container">
+        <div class="batch-selector">
+            <button class="batch-btn active" id="batch-btn-0" onclick="switchBatch(0)">Batch 1</button>
+            <button class="batch-btn" id="batch-btn-1" onclick="switchBatch(1)">Batch 2</button>
+        </div>
         <div class="header">
             <span class="category-badge" id="category">Category</span>
             <div class="progress-container">
@@ -228,10 +264,8 @@
         </div>
 
         <div id="quiz-screen">
-            <div class="question-text" id="question">Loading question...</div>
-            <div class="options-grid" id="options">
-                <!-- Options will be injected here -->
-            </div>
+            <div class="question-text" id="question">Loading...</div>
+            <div class="options-grid" id="options"></div>
 
             <div class="explanation-card" id="explanation-card">
                 <div class="explanation-title">Explanation</div>
@@ -245,336 +279,144 @@
         </div>
 
         <div class="result-screen" id="result-screen">
-            <h2 style="font-size: 2.5rem; margin-bottom: 10px;">Quiz Complete!</h2>
+            <h2 id="result-title" style="font-size: 2.2rem; margin-bottom: 10px;">Quiz Complete!</h2>
             <p>You've navigated through the data galaxy.</p>
             <div class="score-circle">
                 <span id="final-score">0</span>
-                <span style="font-size: 1rem; opacity: 0.7;">out of 38</span>
+                <span id="total-possible" style="font-size: 1rem; opacity: 0.7;">out of 38</span>
             </div>
             <p id="performance-msg"></p>
-            <button class="btn-next" onclick="location.reload()" style="margin-top: 30px;">Restart Journey</button>
+            <button class="btn-next" onclick="resetCurrentBatch()" style="margin-top: 30px;">Restart Batch</button>
         </div>
     </div>
 
     <script>
-        const quizData = [
-            {
-                category: "Data Analytics Basics",
-                question: "Data analytics is best defined as:",
-                options: [
-                    "Collection of large volumes of data",
-                    "Storage of structured and unstructured data",
-                    "Scientific process of transforming data into insights for decision-making",
-                    "Visualization of data using graphs"
-                ],
-                answer: 2,
-                explanation: "Data analytics is the science of analyzing raw data in order to make conclusions about that information. It involves processes to uncover insights that can drive better business decisions."
-            },
-            {
-                category: "Data Analytics Basics",
-                question: "Which of the following represents the correct order of data analytics types based on workflow?",
-                options: [
-                    "Predictive → Descriptive → Prescriptive → Diagnostic",
-                    "Descriptive → Diagnostic → Predictive → Prescriptive",
-                    "Diagnostic → Descriptive → Prescriptive → Predictive",
-                    "Descriptive → Predictive → Diagnostic → Prescriptive"
-                ],
-                answer: 1,
-                explanation: "The standard workflow moves from understanding what happened (Descriptive), why it happened (Diagnostic), what will happen (Predictive), to how we can make it happen (Prescriptive)."
-            },
-            {
-                category: "Data Analytics Basics",
-                question: "Under which level of measurement does the variable 'height of a person' fall?",
-                options: ["Nominal", "Ordinal", "Interval", "Ratio"],
-                answer: 3,
-                explanation: "Height is a 'Ratio' scale variable because it has a true zero point (zero height means no height) and the ratio between values is meaningful."
-            },
-            {
-                category: "Probability & Distributions",
-                question: "Which distribution is most appropriate for rare events occurring over a fixed interval?",
-                options: ["Binomial", "Normal", "Poisson", "Uniform"],
-                answer: 2,
-                explanation: "The Poisson distribution models the probability of a number of events occurring in a fixed interval of time or space, especially when events are rare."
-            },
-            {
-                category: "Probability & Distributions",
-                question: "Which of the following is a discrete probability distribution?",
-                options: ["Normal distribution", "Poisson distribution", "Exponential distribution", "Gamma distribution"],
-                answer: 1,
-                explanation: "The Poisson distribution is discrete as it counts integer events. Normal, Exponential, and Gamma are continuous distributions."
-            },
-            {
-                category: "Probability & Distributions",
-                question: "The mean and variance of a Poisson distribution are:",
-                options: ["μ and μ²", "√λ and λ", "λ and √λ", "λ and λ"],
-                answer: 3,
-                explanation: "A unique property of the Poisson distribution is that its mean (λ) is equal to its variance (λ)."
-            },
-            {
-                category: "Probability & Distributions",
-                question: "Which distribution is commonly used to model the time between events in a Poisson process?",
-                options: ["Binomial distribution", "Exponential distribution", "Uniform distribution", "Chi-square distribution"],
-                answer: 1,
-                explanation: "The Exponential distribution models the time between independent events occurring at a constant average rate (a Poisson process)."
-            },
-            {
-                category: "Probability & Distributions",
-                question: "A fair coin is tossed twice. What is the probability of getting exactly one head?",
-                options: ["0.25", "0.5", "0.75", "1.0"],
-                answer: 1,
-                explanation: "Possible outcomes: HH, HT, TH, TT. Exactly one head appears in HT and TH (2 outcomes out of 4). Probability = 2/4 = 0.5."
-            },
-            {
-                category: "Probability & Distributions",
-                question: "If a binomial distribution has n = 10 and p = 0.4, what is the mean?",
-                options: ["2.0", "4.0", "6.0", "10.0"],
-                answer: 1,
-                explanation: "The mean of a binomial distribution is Calculated as n * p. So, 10 * 0.4 = 4.0."
-            },
-            {
-                category: "Probability & Distributions",
-                question: "In a hypergeometric distribution, sampling is done:",
-                options: ["Without replacement", "With replacement", "With constant probability", "From infinite population"],
-                answer: 0,
-                explanation: "Hypergeometric distribution is used when sampling from a finite population without replacement, meaning the probability of success changes each time."
-            },
-            {
-                category: "Probability & Distributions",
-                question: "A dataset has a mean of 50 and a standard deviation of 10. According to the Empirical Rule, approximately what percentage of observations lie between 30 and 70?",
-                options: ["68%", "75%", "95%", "99.7%"],
-                answer: 2,
-                explanation: "30 and 70 are 2 standard deviations away from the mean (50 ± 2*10). The Empirical Rule states ~95% of data falls within 2 standard deviations of the mean."
-            },
-            {
-                category: "Probability & Distributions",
-                question: "A variable is normally distributed with: Mean (μ) = 50, Standard deviation (σ) = 10. What is the Z-score for a value of 65?",
-                options: ["1.0", "1.5", "2.0", "2.5"],
-                answer: 1,
-                explanation: "Z = (X - μ) / σ = (65 - 50) / 10 = 15 / 10 = 1.5."
-            },
-            {
-                category: "Statistical Inference & Hypothesis Testing",
-                question: "Which hypothesis must always contain equality?",
-                options: ["Alternative hypothesis", "Research hypothesis", "Null hypothesis", "Working hypothesis"],
-                answer: 2,
-                explanation: "The Null Hypothesis (H₀) is the statement of 'no effect' or 'no difference' and always contains the equals sign (=, ≤, or ≥)."
-            },
-            {
-                category: "Statistical Inference & Hypothesis Testing",
-                question: "Rejecting a true null hypothesis is called:",
-                options: ["Type II error", "Power of the test", "Type I error", "Sampling error"],
-                answer: 2,
-                explanation: "Type I error occurs when we reject a null hypothesis that is actually true (a 'false positive')."
-            },
-            {
-                category: "Statistical Inference & Hypothesis Testing",
-                question: "Which action reduces both Type I and Type II errors simultaneously?",
-                options: ["Increasing α", "Decreasing α", "Increasing sample size", "Changing tail of test"],
-                answer: 2,
-                explanation: "Increasing sample size provides more information, which reduces the probability of both Type I and Type II errors."
-            },
-            {
-                category: "Statistical Inference & Hypothesis Testing",
-                question: "The width of a confidence interval for the population mean will decrease when:",
-                options: ["Confidence level increases", "Sample size increases", "Population variance increases", "Sample mean increases"],
-                answer: 1,
-                explanation: "A larger sample size (n) appears in the denominator of the standard error formula; as n increases, the margin of error decreases, making the CI narrower."
-            },
-            {
-                category: "Statistical Inference & Hypothesis Testing",
-                question: "A 95% CI for a mean is (46.5, 51.5). Which statement is correct?",
-                options: [
-                    "The population mean has a 95% probability of lying in the interval",
-                    "95% of sample means lie in this interval",
-                    "The CI is constructed so that 95% of such intervals contain μ",
-                    "The confidence level equals the sample mean"
-                ],
-                answer: 2,
-                explanation: "Confidence levels refer to the long-run success rate of the procedure. We expect 95% of intervals constructed this way to contain the true population mean."
-            },
-            {
-                category: "Statistical Inference & Hypothesis Testing",
-                question: "When σ² is unknown and sample size is small, the appropriate distribution for CI estimation of μ is:",
-                options: ["Z distribution", "Chi-square distribution", "F distribution", "t distribution"],
-                answer: 3,
-                explanation: "The Student's t-distribution is used when the population standard deviation is unknown and the sample size is small (typically n < 30)."
-            },
-            {
-                category: "Statistical Inference & Hypothesis Testing",
-                question: "Sample size (n) = 36, mean = 34.6, σ = 12. H₀: μ ≤ 30, Ha: μ > 30. If tested at 95% confidence, the null hypothesis should:",
-                options: ["not be rejected", "be rejected", "Not enough information", "None of these"],
-                answer: 1,
-                explanation: "Z-score = (34.6 - 30) / (12 / √36) = 4.6 / 2 = 2.3. The critical value for a one-tailed test at 95% is 1.645. Since 2.3 > 1.645, we reject H₀."
-            },
-            {
-                category: "Statistical Inference & Hypothesis Testing",
-                question: "In testing H₀: μ=20 vs H₁: μ>20 with α = 0.05, the rejection region for a Z test is:",
-                options: ["Z < -1.96", "Z > 1.645", "|Z| > 1.96", "Z < -1.645"],
-                answer: 1,
-                explanation: "This is a right-tailed test. For α = 0.05, the critical value is 1.645, so we reject if Z > 1.645."
-            },
-            {
-                category: "Regression & ANOVA",
-                question: "In simple linear regression, the coefficient b (slope) represents:",
-                options: [
-                    "Average value of Y",
-                    "Change in Y for a one-unit change in X",
-                    "Change in X for a one-unit change in Y",
-                    "Total variation in data"
-                ],
-                answer: 1,
-                explanation: "The slope (b) measures the expected change in the dependent variable (Y) for every single-unit increase in the independent variable (X)."
-            },
-            {
-                category: "Regression & ANOVA",
-                question: "Least squares method minimizes:",
-                options: ["Σ(residuals)", "(residuals)", "(residuals²)", "Σ(y²)"],
-                answer: 2,
-                explanation: "The 'Ordinary Least Squares' (OLS) method works by minimizing the sum of the squares of the vertical offsets (residuals) between each data point and the fitted line."
-            },
-            {
-                category: "Regression & ANOVA",
-                question: "Standardized residuals are primarily used to:",
-                options: ["Detect outliers", "Increase R²", "Reduce bias in coefficients", "Transform dependent variables"],
-                answer: 0,
-                explanation: "Standardizing residuals (dividing them by their standard deviation) helps identify outliers, as points with a standardized residual beyond ±2 or ±3 are likely outliers."
-            },
-            {
-                category: "Regression & ANOVA",
-                question: "A residual plot showing a clear curved pattern suggests:",
-                options: [
-                    "The model fits perfectly",
-                    "Constant variance exists",
-                    "A linear model may be inappropriate",
-                    "Errors are normally distributed"
-                ],
-                answer: 2,
-                explanation: "A healthy residual plot should look like random noise. Any discernible pattern (like a curve) indicates that the linear model isn't capturing the trend correctly."
-            },
-            {
-                category: "Regression & ANOVA",
-                question: "ANOVA is preferred over multiple t-tests because it:",
-                options: [
-                    "Reduces Type II error",
-                    "Eliminates assumptions",
-                    "Controls family-wise Type I error",
-                    "Works only for large samples"
-                ],
-                answer: 2,
-                explanation: "Running multiple t-tests increases the chance of making a Type I error across the whole set (family-wise error). ANOVA controls this by testing for any difference among means in a single step."
-            },
-            {
-                category: "Regression & ANOVA",
-                question: "In ANOVA, if treatment means are far apart relative to within-group variability, F value will be:",
-                options: ["Close to 0", "Close to 1", "Large", "Negative"],
-                answer: 2,
-                explanation: "F = (Between-group Variance) / (Within-group Variance). If the means are far apart, the between-group variance is large, leading to a large F-value."
-            },
-            {
-                category: "Regression & ANOVA",
-                question: "In Randomized Block Design (RBD) the purpose of blocking is to:",
-                options: [
-                    "Increase within-group variation",
-                    "Remove nuisance variation",
-                    "Increase error variance",
-                    "Increase Type II error"
-                ],
-                answer: 1,
-                explanation: "Blocking groups similar units together to account for (and remove) the variation caused by known, non-experimental factors (nuisance variables)."
-            },
-            {
-                category: "Machine Learning & Classification",
-                question: "Which of the following correctly defines classification accuracy?",
-                options: ["(TP+FP)/Total", "(TP+TN)/Total", "(FP+FN)/Total", "TP/(TP+FN)"],
-                answer: 1,
-                explanation: "Accuracy is the ratio of correctly predicted observations (True Positives + True Negatives) to the total number of observations."
-            },
-            {
-                category: "Machine Learning & Classification",
-                question: "Which metric measures the proportion of actual positives correctly identified?",
-                options: ["Precision", "Recall (Sensitivity)", "Specificity", "Accuracy"],
-                answer: 1,
-                explanation: "Recall (or Sensitivity) answers the question: 'Of all the actual positive cases, how many did we correctly predict?'"
-            },
-            {
-                category: "Machine Learning & Classification",
-                question: "In an ROC curve, the x-axis represents:",
-                options: ["Sensitivity", "Precision", "False Positive Rate", "Accuracy"],
-                answer: 2,
-                explanation: "A Receiver Operating Characteristic (ROC) curve plots True Positive Rate (Sensitivity) on the y-axis and False Positive Rate (1 - Specificity) on the x-axis."
-            },
-            {
-                category: "Machine Learning & Classification",
-                question: "In logistic regression, the relationship between predictors and probability is modeled using:",
-                options: ["linear probability function", "exponential function", "logistic (sigmoid) function", "quadratic function"],
-                answer: 2,
-                explanation: "The logistic function (S-curve) maps any real-valued number into a value between 0 and 1, representing a probability."
-            },
-            {
-                category: "Machine Learning & Classification",
-                question: "The Euclidean distance formula is used to:",
-                options: ["Measure similarity", "Normalize data", "Measure dissimilarity", "Reduce dimensions"],
-                answer: 2,
-                explanation: "Distance metrics like Euclidean distance measure how far apart points are in space, which is essentially a measure of dissimilarity (larger distance = less similar)."
-            },
-            {
-                category: "Machine Learning & Classification",
-                question: "Which method is most sensitive to outliers in clustering?",
-                options: ["Hierarchical clustering", "K-means clustering", "Chi-square test", "Regression"],
-                answer: 1,
-                explanation: "K-means clustering uses the arithmetic mean to define cluster centers, which is highly influenced by extreme values or outliers."
-            },
-            {
-                category: "Machine Learning & Classification",
-                question: "Which of the following ensures binary splits in decision trees?",
-                options: ["Information gain", "Gain ratio", "Gini index", "Entropy"],
-                answer: 2,
-                explanation: "The Gini index is widely used (e.g., in CART algorithm) to decide the best split and typically results in binary divisions."
-            },
-            {
-                category: "Python & Coding",
-                question: "What is the purpose of: tbl = pd.read_excel('regr.xlsx')?",
-                options: [
-                    "To read an Excel dataset into a pandas DataFrame",
-                    "To create a new Excel file",
-                    "To export regression results to Excel",
-                    "To convert a DataFrame into a NumPy array"
-                ],
-                answer: 0,
-                explanation: "The `pd.read_excel()` function in the Pandas library is specifically used to load Excel file data into a tabular structure called a DataFrame."
-            },
-            {
-                category: "Python & Coding",
-                question: "In Pandas, which command is used to select rows by integer position?",
-                options: ["df.loc", "df.select()", "df.iloc", "df.index"],
-                answer: 2,
-                explanation: "`.iloc` is used for integer-location based indexing, while `.loc` is used for label-based indexing."
-            },
-            {
-                category: "Python & Coding",
-                question: "What will be the output of: from scipy.stats import poisson; print(poisson.var(4))",
-                options: ["2.0", "4.0", "8.0", "16.0"],
-                answer: 1,
-                explanation: "As previously noted, the variance of a Poisson distribution is equal to its parameter λ (mean). Here λ = 4, so variance = 4."
-            },
-            {
-                category: "Python & Coding",
-                question: "What will be the output of: from scipy.stats import norm; print(norm.pdf(0))",
-                options: ["0.0", "0.25", "0.399", "1.0"],
-                answer: 2,
-                explanation: "For a standard normal distribution (mean=0, SD=1), the value of the probability density function (PDF) at x=0 is approximately 0.3989."
-            }
+        const batches = [
+            [
+                { category: "Data Analytics Basics", question: "Data analytics is best defined as:", options: ["Collection of large volumes of data", "Storage of structured and unstructured data", "Scientific process of transforming data into insights for decision-making", "Visualization of data using graphs"], answer: 2, explanation: "Data analytics is the science of analyzing raw data in order to make conclusions about that information. It involves processes to uncover insights that can drive better business decisions." },
+                { category: "Data Analytics Basics", question: "Which of the following represents the correct order of data analytics types based on workflow?", options: ["Predictive → Descriptive → Prescriptive → Diagnostic", "Descriptive → Diagnostic → Predictive → Prescriptive", "Diagnostic → Descriptive → Prescriptive → Predictive", "Descriptive → Predictive → Diagnostic → Prescriptive"], answer: 1, explanation: "The standard workflow moves from understanding what happened (Descriptive), why it happened (Diagnostic), what will happen (Predictive), to how we can make it happen (Prescriptive)." },
+                { category: "Data Analytics Basics", question: "Under which level of measurement does the variable 'height of a person' fall?", options: ["Nominal", "Ordinal", "Interval", "Ratio"], answer: 3, explanation: "Height is a 'Ratio' scale variable because it has a true zero point (zero height means no height) and the ratio between values is meaningful." },
+                { category: "Probability & Distributions", question: "Which distribution is most appropriate for rare events occurring over a fixed interval?", options: ["Binomial", "Normal", "Poisson", "Uniform"], answer: 2, explanation: "The Poisson distribution models the probability of a number of events occurring in a fixed interval of time or space, especially when events are rare." },
+                { category: "Probability & Distributions", question: "Which of the following is a discrete probability distribution?", options: ["Normal distribution", "Poisson distribution", "Exponential distribution", "Gamma distribution"], answer: 1, explanation: "The Poisson distribution is discrete as it counts integer events. Normal, Exponential, and Gamma are continuous distributions." },
+                { category: "Probability & Distributions", question: "The mean and variance of a Poisson distribution are:", options: ["μ and μ²", "√λ and λ", "λ and √λ", "λ and λ"], answer: 3, explanation: "A unique property of the Poisson distribution is that its mean (λ) is equal to its variance (λ)." },
+                { category: "Probability & Distributions", question: "Which distribution is commonly used to model the time between events in a Poisson process?", options: ["Binomial distribution", "Exponential distribution", "Uniform distribution", "Chi-square distribution"], answer: 1, explanation: "The Exponential distribution models the time between independent events occurring at a constant average rate (a Poisson process)." },
+                { category: "Probability & Distributions", question: "A fair coin is tossed twice. What is the probability of getting exactly one head?", options: ["0.25", "0.5", "0.75", "1.0"], answer: 1, explanation: "Possible outcomes: HH, HT, TH, TT. Exactly one head appears in HT and TH (2 outcomes out of 4). Probability = 2/4 = 0.5." },
+                { category: "Probability & Distributions", question: "If a binomial distribution has n = 10 and p = 0.4, what is the mean?", options: ["2.0", "4.0", "6.0", "10.0"], answer: 1, explanation: "The mean of a binomial distribution is calculated as n * p. So, 10 * 0.4 = 4.0." },
+                { category: "Probability & Distributions", question: "In a hypergeometric distribution, sampling is done:", options: ["Without replacement", "With replacement", "With constant probability", "From infinite population"], answer: 0, explanation: "Hypergeometric distribution is used when sampling from a finite population without replacement, meaning the probability of success changes each time." },
+                { category: "Probability & Distributions", question: "A dataset has a mean of 50 and a standard deviation of 10. According to the Empirical Rule, approximately what percentage of observations lie between 30 and 70?", options: ["68%", "75%", "95%", "99.7%"], answer: 2, explanation: "30 and 70 are 2 standard deviations away from the mean (50 ± 2*10). The Empirical Rule states ~95% of data falls within 2 standard deviations of the mean." },
+                { category: "Probability & Distributions", question: "A variable is normally distributed with: Mean (μ) = 50, Standard deviation (σ) = 10. What is the Z-score for a value of 65?", options: ["1.0", "1.5", "2.0", "2.5"], answer: 1, explanation: "Z = (X - μ) / σ = (65 - 50) / 10 = 15 / 10 = 1.5." },
+                { category: "Statistical Inference & Hypothesis Testing", question: "Which hypothesis must always contain equality?", options: ["Alternative hypothesis", "Research hypothesis", "Null hypothesis", "Working hypothesis"], answer: 2, explanation: "The Null Hypothesis (H₀) is the statement of 'no effect' or 'no difference' and always contains the equals sign (=, ≤, or ≥)." },
+                { category: "Statistical Inference & Hypothesis Testing", question: "Rejecting a true null hypothesis is called:", options: ["Type II error", "Power of the test", "Type I error", "Sampling error"], answer: 2, explanation: "Type I error occurs when we reject a null hypothesis that is actually true (a 'false positive')." },
+                { category: "Statistical Inference & Hypothesis Testing", question: "Which action reduces both Type I and Type II errors simultaneously?", options: ["Increasing α", "Decreasing α", "Increasing sample size", "Changing tail of test"], answer: 2, explanation: "Increasing sample size provides more information, which reduces the probability of both Type I and Type II errors." },
+                { category: "Statistical Inference & Hypothesis Testing", question: "The width of a confidence interval for the population mean will decrease when:", options: ["Confidence level increases", "Sample size increases", "Population variance increases", "Sample mean increases"], answer: 1, explanation: "A larger sample size (n) appears in the denominator of the standard error formula; as n increases, the margin of error decreases, making the CI narrower." },
+                { category: "Statistical Inference & Hypothesis Testing", question: "A 95% CI for a mean is (46.5, 51.5). Which statement is correct?", options: ["The population mean has a 95% probability of lying in the interval", "95% of sample means lie in this interval", "The CI is constructed so that 95% of such intervals contain μ", "The confidence level equals the sample mean"], answer: 2, explanation: "Confidence levels refer to the long-run success rate of the procedure. We expect 95% of intervals constructed this way to contain the true population mean." },
+                { category: "Statistical Inference & Hypothesis Testing", question: "When σ² is unknown and sample size is small, the appropriate distribution for CI estimation of μ is:", options: ["Z distribution", "Chi-square distribution", "F distribution", "t distribution"], answer: 3, explanation: "The Student's t-distribution is used when the population standard deviation is unknown and the sample size is small (typically n < 30)." },
+                { category: "Statistical Inference & Hypothesis Testing", question: "Sample size (n) = 36, mean = 34.6, σ = 12. H₀: μ ≤ 30, Ha: μ > 30. If tested at 95% confidence, the null hypothesis should:", options: ["not be rejected", "be rejected", "Not enough information", "None of these"], answer: 1, explanation: "Z-score = (34.6 - 30) / (12 / √36) = 4.6 / 2 = 2.3. The critical value for a one-tailed test at 95% is 1.645. Since 2.3 > 1.645, we reject H₀." },
+                { category: "Statistical Inference & Hypothesis Testing", question: "In testing H₀: μ=20 vs H₁: μ>20 with α = 0.05, the rejection region for a Z test is:", options: ["Z < -1.96", "Z > 1.645", "|Z| > 1.96", "Z < -1.645"], answer: 1, explanation: "This is a right-tailed test. For α = 0.05, the critical value is 1.645, so we reject if Z > 1.645." },
+                { category: "Regression & ANOVA", question: "In simple linear regression, the coefficient b (slope) represents:", options: ["Average value of Y", "Change in Y for a one-unit change in X", "Change in X for a one-unit change in Y", "Total variation in data"], answer: 1, explanation: "The slope (b) measures the expected change in the dependent variable (Y) for every single-unit increase in the independent variable (X)." },
+                { category: "Regression & ANOVA", question: "Least squares method minimizes:", options: ["Σ(residuals)", "(residuals)", "(residuals²)", "Σ(y²)"], answer: 2, explanation: "The 'Ordinary Least Squares' (OLS) method works by minimizing the sum of the squares of the vertical offsets (residuals) between each data point and the fitted line." },
+                { category: "Regression & ANOVA", question: "Standardized residuals are primarily used to:", options: ["Detect outliers", "Increase R²", "Reduce bias in coefficients", "Transform dependent variables"], answer: 0, explanation: "Standardizing residuals (dividing them by their standard deviation) helps identify outliers, as points with a standardized residual beyond ±2 or ±3 are likely outliers." },
+                { category: "Regression & ANOVA", question: "A residual plot showing a clear curved pattern suggests:", options: ["The model fits perfectly", "Constant variance exists", "A linear model may be inappropriate", "Errors are normally distributed"], answer: 2, explanation: "A healthy residual plot should look like random noise. Any discernible pattern (like a curve) indicates that the linear model isn't capturing the trend correctly." },
+                { category: "Regression & ANOVA", question: "ANOVA is preferred over multiple t-tests because it:", options: ["Reduces Type II error", "Eliminates assumptions", "Controls family-wise Type I error", "Works only for large samples"], answer: 2, explanation: "Running multiple t-tests increases the chance of making a Type I error across the whole set (family-wise error). ANOVA controls this by testing for any difference among means in a single step." },
+                { category: "Regression & ANOVA", question: "In ANOVA, if treatment means are far apart relative to within-group variability, F value will be:", options: ["Close to 0", "Close to 1", "Large", "Negative"], answer: 2, explanation: "F = (Between-group Variance) / (Within-group Variance). If the means are far apart, the between-group variance is large, leading to a large F-value." },
+                { category: "Regression & ANOVA", question: "In Randomized Block Design (RBD) the purpose of blocking is to:", options: ["Increase within-group variation", "Remove nuisance variation", "Increase error variance", "Increase Type II error"], answer: 1, explanation: "Blocking groups similar units together to account for (and remove) the variation caused by known, non-experimental factors (nuisance variables)." },
+                { category: "Machine Learning & Classification", question: "Which of the following correctly defines classification accuracy?", options: ["(TP+FP)/Total", "(TP+TN)/Total", "(FP+FN)/Total", "TP/(TP+FN)"], answer: 1, explanation: "Accuracy is the ratio of correctly predicted observations (True Positives + True Negatives) to the total number of observations." },
+                { category: "Machine Learning & Classification", question: "Which metric measures the proportion of actual positives correctly identified?", options: ["Precision", "Recall (Sensitivity)", "Specificity", "Accuracy"], answer: 1, explanation: "Recall (or Sensitivity) answers the question: 'Of all the actual positive cases, how many did we correctly predict?'" },
+                { category: "Machine Learning & Classification", question: "In an ROC curve, the x-axis represents:", options: ["Sensitivity", "Precision", "False Positive Rate", "Accuracy"], answer: 2, explanation: "A Receiver Operating Characteristic (ROC) curve plots True Positive Rate (Sensitivity) on the y-axis and False Positive Rate (1 - Specificity) on the x-axis." },
+                { category: "Machine Learning & Classification", question: "In logistic regression, the relationship between predictors and probability is modeled using:", options: ["linear probability function", "exponential function", "logistic (sigmoid) function", "quadratic function"], answer: 2, explanation: "The logistic function (S-curve) maps any real-valued number into a value between 0 and 1, representing a probability." },
+                { category: "Machine Learning & Classification", question: "The Euclidean distance formula is used to:", options: ["Measure similarity", "Normalize data", "Measure dissimilarity", "Reduce dimensions"], answer: 2, explanation: "Distance metrics like Euclidean distance measure how far apart points are in space, which is essentially a measure of dissimilarity (larger distance = less similar)." },
+                { category: "Machine Learning & Classification", question: "Which method is most sensitive to outliers in clustering?", options: ["Hierarchical clustering", "K-means clustering", "Chi-square test", "Regression"], answer: 1, explanation: "K-means clustering uses the arithmetic mean to define cluster centers, which is highly influenced by extreme values or outliers." },
+                { category: "Machine Learning & Classification", question: "Which of the following ensures binary splits in decision trees?", options: ["Information gain", "Gain ratio", "Gini index", "Entropy"], answer: 2, explanation: "The Gini index is widely used (e.g., in CART algorithm) to decide the best split and typically results in binary divisions." },
+                { category: "Python & Coding", question: "What is the purpose of: tbl = pd.read_excel('regr.xlsx')?", options: ["To read an Excel dataset into a pandas DataFrame", "To create a new Excel file", "To export regression results to Excel", "To convert a DataFrame into a NumPy array"], answer: 0, explanation: "The `pd.read_excel()` function in the Pandas library is specifically used to load Excel file data into a tabular structure called a DataFrame." },
+                { category: "Python & Coding", question: "In Pandas, which command is used to select rows by integer position?", options: ["df.loc", "df.select()", "df.iloc", "df.index"], answer: 2, explanation: "`.iloc` is used for integer-location based indexing, while `.loc` is used for label-based indexing." },
+                { category: "Python & Coding", question: "What will be the output of: from scipy.stats import poisson; print(poisson.var(4))", options: ["2.0", "4.0", "8.0", "16.0"], answer: 1, explanation: "As previously noted, the variance of a Poisson distribution is equal to its parameter λ (mean). Here λ = 4, so variance = 4." },
+                { category: "Python & Coding", question: "What will be the output of: from scipy.stats import norm; print(norm.pdf(0))", options: ["0.0", "0.25", "0.399", "1.0"], answer: 2, explanation: "For a standard normal distribution (mean=0, SD=1), the value of the probability density function (PDF) at x=0 is approximately 0.3989." }
+            ],
+            [
+                { category: "Foundations", question: "State True or false: Data can be generated by machines but not by humans.", options: ["True", "False"], answer: 1, explanation: "Data is generated by both humans (social media, sensors, surveys) and machines (logs, automated systems)." },
+                { category: "Data Analytics Types", question: "Which one of the following is not a classification of Data Analytics?", options: ["Diagnostic analytics", "Deceptive analytics", "Predictive analytics", "Prescriptive analytics"], answer: 1, explanation: "The standard hierarchy includes Descriptive, Diagnostic, Predictive, and Prescriptive analytics. 'Deceptive' is not a standard type." },
+                { category: "Measurement Scales", question: "True or false: Nominal scale is the lowest level of measurement and ratio scale is the highest.", options: ["True", "False"], answer: 0, explanation: "Correct. Nominal provides simple labels, while Ratio provides the most comprehensive data including a true zero point." },
+                { category: "Pandas Indexing", question: "Statement A: With iloc, we can pass negative values. Statement B: With loc, we can pass negative values.", options: ["A and B are correct", "Both are false", "A is correct, B is false", "B is correct, A is false"], answer: 2, explanation: "iloc supports integer position indexing (including negative like Python lists). loc is label-based and doesn't support negative integers unless the labels themselves are negative." },
+                { category: "Dispersion", question: "Which of the following is not a measure of dispersion?", options: ["Skewness", "Kurtosis", "Range", "Percentile"], answer: 3, explanation: "Percentile is a measure of relative position, not dispersion. While Skewness/Kurtosis describe shape, Range definitely measures spread." },
+                { category: "Distributions", question: "True or False: Bimodal Data sets contains two modes.", options: ["True", "False"], answer: 0, explanation: "Correct. A bimodal distribution has two distinct peaks, representing two most frequent values or ranges." },
+                { category: "Visualization", question: "Bar Charts are used for:", options: ["Continuous data", "Categorical data", "Both", "None"], answer: 1, explanation: "Bar charts are specifically designed to compare discrete categories. Histograms are typically used for continuous data." },
+                { category: "Data Types", question: "Median is not applicable to:", options: ["Ordinal data", "Interval data", "Nominal data", "None"], answer: 2, explanation: "Median requires data to be ordered. Nominal data lacks any inherent ranking, making the 'middle' value meaningless." },
+                { category: "Data Types", question: "Arithmetic mean is not applicable for ordinal or nominal data.", options: ["True", "False"], answer: 0, explanation: "True. Mean requires numerical magnitudes. Calculating a 'mean' for categories or ranks is mathematically unsound." },
+                { category: "Definitions", question: "Data analytics is best defined as:", options: ["Collection of large data", "Data storage", "Process of transforming data into insights", "Visualization"], answer: 2, explanation: "Data analytics focuses on deriving actionable insights from raw data to support strategic decisions." },
+                { category: "Workflow", question: "Correct order of data analytics types based on workflow?", options: ["Predictive -> Descriptive", "Descriptive -> Diagnostic -> Predictive -> Prescriptive", "Diagnostic -> Predictive", "Descriptive -> Predictive"], answer: 1, explanation: "The logic flows: What happened? (Descriptive), Why? (Diagnostic), What's next? (Predictive), What should we do? (Prescriptive)." },
+                { category: "Measurements", question: "Under which level of measurement does 'height of a person' fall?", options: ["Nominal", "Ordinal", "Interval", "Ratio"], answer: 3, explanation: "Height is a ratio variable because it has a true zero and meaningful intervals." },
+                { category: "Probability", question: "College has 3 assistant-ships for 8 students. How many groups of three?", options: ["126", "56", "136", "130"], answer: 1, explanation: "Using combinations (8C3) = (8 * 7 * 6) / (3 * 2 * 1) = 56." },
+                { category: "Experimentation", question: "What is each individual outcome of an experiment called?", options: ["Sample space", "Sample point", "Experiment", "Individual"], answer: 1, explanation: "A sample point is a single possible outcome in the sample space." },
+                { category: "Probability", question: "Two events having nonzero probabilities:", options: ["Can be both exclusive and independent", "Cannot be both exclusive and independent", "Always mutually exclusive", "Always independent"], answer: 1, explanation: "If two events are mutually exclusive, the occurrence of one ensures the other cannot happen, meaning they are dependent." },
+                { category: "Permutations", question: "Pos: President, VP. Sample 10. How many possibilities?", options: ["90", "100", "120", "130"], answer: 0, explanation: "Order matters here (Permutation): 10 * 9 = 90." },
+                { category: "Distributions", question: "A standard normal distribution has:", options: ["Mean 1, SD 0", "Mean 0.5, SD 0.5", "Mean 0, SD 1", "Mean 1, SD 1"], answer: 2, explanation: "The standard normal distribution (Z-distribution) has a mean of 0 and a standard deviation of 1." },
+                { category: "Distributions", question: "Mean 200, SD 25. Probability of weight > 241.25?", options: ["0.4505", "0.0495", "0.9505", "0.9010"], answer: 1, explanation: "Z = (241.25 - 200) / 25 = 1.65. Area for Z > 1.65 is approx 0.0495." },
+                { category: "Distributions", question: "Mean 200, SD 25. Probability of weight < 250?", options: ["0.4772", "0.9772", "0.0528", "0.5000"], answer: 1, explanation: "Z = (250 - 200) / 25 = 2.0. Area for Z < 2.0 is 0.5 + 0.4772 = 0.9772." },
+                { category: "Distributions", question: "Binomial and normal Distributions are discrete probability distributions.", options: ["True", "False"], answer: 1, explanation: "Normal distribution is continuous. Binomial is discrete." },
+                { category: "Distributions", question: "Binomial: p=0.5, n=100. Expected value?", options: ["0.50", "0.30", "100", "50"], answer: 3, explanation: "Expected value (mean) = n * p = 100 * 0.5 = 50." },
+                { category: "Probability", question: "All mutually exclusive events are independent events.", options: ["True", "False"], answer: 1, explanation: "Mutually exclusive events are highly dependent; if one happens, the other cannot." },
+                { category: "Inference", question: "The specific value of a random variable is called estimator.", options: ["True", "False"], answer: 1, explanation: "An estimator is the formula; the specific value is called an 'estimate'." },
+                { category: "Inference", question: "Prop P=0.35, n=100. Probability of proportion between 0.3 and 0.4?", options: ["0.961", "0.827", "0.706", "0.53"], answer: 2, explanation: "Standard Error ≈ 0.047. Z-scores ≈ ±1.05. Area ≈ 0.706." },
+                { category: "Sampling", question: "Stratified random sampling is a method in which:", options: ["Samples from strata", "Various strata selected", "Population divided into strata, then random samples from each", "None"], answer: 2, explanation: "The population is partitioned into strata, and samples are drawn independently from each." },
+                { category: "Basic Terms", question: "A population is a set of all items or individual of interest.", options: ["True", "False"], answer: 0, explanation: "True. The population is the entire group we want to study." },
+                { category: "Probability", question: "90 MCQs, p=0.25. Probability of score ≥ 10?", options: ["0.9997", "0.7894", "0", "0.001"], answer: 0, explanation: "Expected score is 22.5. Getting ≥ 10 is almost guaranteed (P ≈ 0.9997)." },
+                { category: "Probability", question: "Defective 5%, batch of 10. Probability exactly 2 are defective?", options: ["0.065", "0.075", "0.085", "0.095"], answer: 1, explanation: "Binomial: 10C2 * (0.05)^2 * (0.95)^8 ≈ 0.075." },
+                { category: "Poisson", question: "Avg sales 2.5/day. Probability of 5 car sales?", options: ["0.0668", "0.544", "0.082", "0.205"], answer: 0, explanation: "Poisson: (e^-2.5 * 2.5^5) / 5! ≈ 0.0668." },
+                { category: "Poisson", question: "Avg sales 2.5/day. Probability of no sales?", options: ["0.0668", "0.544", "0.082", "0.205"], answer: 2, explanation: "Poisson for x=0: e^-2.5 ≈ 0.082." },
+                { category: "Confidence Intervals", question: "Sample 100, 25 female. 95% CI Lower Limit?", options: ["0.150", "0.145", "0.165", "0.175"], answer: 2, explanation: "p=0.25, SE≈0.0433. CI = 0.25 - 1.96*0.0433 ≈ 0.165." },
+                { category: "Confidence Intervals", question: "Sample 100, 25 female. 95% CI Upper Limit?", options: ["0.150", "0.165", "0.465", "0.335"], answer: 3, explanation: "CI = 0.25 + 1.96*0.0433 ≈ 0.335." },
+                { category: "Hypothesis Testing", question: "n=20, population SD is known. Which test?", options: ["t-test", "z-test", "Both", "F-test"], answer: 1, explanation: "If population SD is known, use a Z-test." },
+                { category: "Hypothesis Testing", question: "H₀: mu1- mu2 = 0 is a:", options: ["Upper tail", "Lower tail", "Two tail", "F-test"], answer: 2, explanation: "An equality null is tested with a two-tailed test." },
+                { category: "Hypothesis Testing", question: "Mean life = 375, SD=100, n=64. Null Hypothesis?", options: ["Mu = 375", "Mu ≤ 375", "Mu = 350", "Mu ≥ 350"], answer: 0, explanation: "Test for 'equal to' makes H₀: μ = 375." },
+                { category: "Hypothesis Testing", question: "Mean life = 375, SD=100, n=64, sample mean=350. Evidence Mu ≠ 375 at α=0.05?", options: ["Yes", "No", "None"], answer: 0, explanation: "Z = -2.0. Since |-2.0| > 1.96, reject H₀. Yes, there is evidence." },
+                { category: "Hypothesis Testing", question: "One-tailed test, z=0. P-value?", options: ["Zero", "-0.5", "0.5", "1.0"], answer: 2, explanation: "Center of normal distribution has 0.5 area on each side." },
+                { category: "Inference", question: "Error of rejecting a true null hypothesis is:", options: ["Type I", "Type II", "Beta", "Low info"], answer: 0, explanation: "Type I error is a 'false positive'." },
+                { category: "Inference", question: "Mean 168. n=25, x-bar=172.5, s=15.4. t-statistic?", options: ["2", "-2", "1.46", "-1.46"], answer: 2, explanation: "t = (172.5 - 168) / (15.4/5) ≈ 1.46." },
+                { category: "Inference", question: "If null hypothesis is rejected:", options: ["No conclusions", "Alternative is true", "Data error", "Small sample"], answer: 1, explanation: "Rejecting the null provides evidence for the alternative." },
+                { category: "Inference", question: "In testing, alpha is:", options: ["1 - sig", "Crit value", "Conf level", "Level of significance"], answer: 3, explanation: "Alpha is the risk we accept of making a Type I error." },
+                { category: "Inference", question: "Rejected at 5%. At 1% it:", options: ["Always rejected", "Always accepted", "Never tested", "May or may not"], answer: 3, explanation: "1% is stricter; a result significant at 5% might not be at 1%." },
+                { category: "ANOVA", question: "In ANOVA, 'factor' refers to:", options: ["Dependent variable", "Independent variable", "Levels", "F value"], answer: 1, explanation: "Factor is the categorical independent variable being studied." },
+                { category: "ANOVA", question: "ANOVA: 3 treatments, 10 obs each, SSE=500. MSE?", options: ["130.2", "48.8", "18.52", "30.0"], answer: 2, explanation: "df = 30-3=27. MSE = 500 / 27 ≈ 18.52." },
+                { category: "ANOVA", question: "The 'F' ratio in randomized ANOVA is:", options: ["MST/MSE", "MSTR/MSE", "MSE/MSTR", "MSE/MST"], answer: 1, explanation: "F = MSTR / MSE." },
+                { category: "ANOVA", question: "ANOVA: 7 samples, 10 obs each. Degrees of Freedom for F?", options: ["7 num, 20 den", "5 num, 20 den", "6 num, 63 den", "7 num, 63 den"], answer: 2, explanation: "num df = 7-1=6. den df = 70-7=63." },
+                { category: "ANOVA", question: "ANOVA: SST=200, SSTR=80. SSE is:", options: ["280", "120", "80", "220"], answer: 1, explanation: "SSE = SST - SSTR = 200-80=120." },
+                { category: "ANOVA", question: "Critical F value (8, 29) at alpha=0.01?", options: ["2.18", "3.20", "3.53", "3.94"], answer: 1, explanation: "Standard F-table value for (8, 29) at 0.01 is 3.20." },
+                { category: "ANOVA", question: "n1=15, n2=35, SD equal/unknown. Which distribution?", options: ["t with 51", "z with 50", "z with 49", "t with 48"], answer: 3, explanation: "df = 15+35-2 = 48. Use t-distribution." },
+                { category: "Proportions", question: "P1 - P2 is approximated by normal distribution.", options: ["True", "False"], answer: 0, explanation: "Correct. For large enough samples, the difference between proportions is approximately normal." }
+            ]
         ];
 
+        let currentBatchIndex = 0;
+        let quizData = batches[currentBatchIndex];
         let currentQuestion = 0;
         let score = 0;
         let answered = false;
 
-        const container = document.getElementById('quiz-container');
         const nextBtn = document.getElementById('next-btn');
         const progressBar = document.getElementById('progress-bar');
         const resultScreen = document.getElementById('result-screen');
         const quizScreen = document.getElementById('quiz-screen');
+
+        function switchBatch(index) {
+            currentBatchIndex = index;
+            quizData = batches[currentBatchIndex];
+            
+            document.querySelectorAll('.batch-btn').forEach((btn, i) => {
+                btn.classList.toggle('active', i === index);
+            });
+
+            resetCurrentBatch();
+        }
+
+        function resetCurrentBatch() {
+            currentQuestion = 0;
+            score = 0;
+            answered = false;
+            quizScreen.style.display = 'block';
+            resultScreen.style.display = 'none';
+            nextBtn.textContent = "Next Question";
+            loadQuestion();
+        }
 
         function loadQuestion() {
             const data = quizData[currentQuestion];
@@ -597,7 +439,6 @@
             nextBtn.disabled = true;
             answered = false;
             
-            // Update Progress
             const progress = ((currentQuestion) / quizData.length) * 100;
             progressBar.style.width = `${progress}%`;
         }
@@ -617,7 +458,6 @@
                 allOptions[data.answer].classList.add('correct');
             }
 
-            // Show explanation
             document.getElementById('explanation-text').textContent = data.explanation;
             document.getElementById('explanation-card').style.display = 'block';
             
@@ -641,11 +481,13 @@
             resultScreen.style.display = 'block';
             progressBar.style.width = '100%';
             document.getElementById('final-score').textContent = score;
+            const total = quizData.length;
+            document.getElementById('total-possible').textContent = `out of ${total}`;
             
-            const percentage = (score / quizData.length) * 100;
+            const percentage = (score / total) * 100;
             let msg = "";
-            if (percentage >= 90) msg = "Stellar performance! You're a Data Sage.";
-            else if (percentage >= 70) msg = "Great job! Your analytics skills are sharp.";
+            if (percentage >= 90) msg = "Stellar performance! You're a Data Analytics Sage.";
+            else if (percentage >= 70) msg = "Great job! Your skills are sharp.";
             else if (percentage >= 50) msg = "Solid foundation. Keep training.";
             else msg = "The universe is vast. Keep exploring and learning!";
             
