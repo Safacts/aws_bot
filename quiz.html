@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AWS Data Analytics Practice Quiz</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #050b1a;
+            --card-bg: rgba(13, 22, 45, 0.7);
+            --primary-accent: #4cc9f0;
+            --secondary-accent: #7209b7;
+            --text-color: #e0e6ed;
+            --correct-color: #4ade80;
+            --wrong-color: #f87171;
+            --glass-border: rgba(255, 255, 255, 0.1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Outfit', sans-serif;
+        }
+
+        body {
+            background: radial-gradient(circle at 50% 50%, #1a1a2e 0%, #050b1a 100%);
+            color: var(--text-color);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow-x: hidden;
+            padding: 20px;
+        }
+
+        /* Animated Background Stars */
+        body::before {
+            content: "";
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                radial-gradient(white, rgba(255,255,255,.2) 2px, transparent 40px),
+                radial-gradient(white, rgba(255,255,255,.15) 1px, transparent 30px);
+            background-size: 550px 550px, 350px 350px;
+            background-position: 0 0, 40px 60px;
+            opacity: 0.1;
+            z-index: -1;
+        }
+
+        .quiz-container {
+            width: 100%;
+            max-width: 800px;
+            background: var(--card-bg);
+            backdrop-filter: blur(15px);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            padding: 40px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            position: relative;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        .category-badge {
+            background: rgba(76, 201, 240, 0.1);
+            color: var(--primary-accent);
+            padding: 6px 16px;
+            border-radius: 100px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            border: 1px solid rgba(76, 201, 240, 0.2);
+        }
+
+        .progress-container {
+            flex-grow: 1;
+            margin: 0 20px;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary-accent), var(--secondary-accent));
+            width: 0%;
+            transition: width 0.4s ease;
+        }
+
+        .question-text {
+            font-size: 1.5rem;
+            font-weight: 600;
+            line-height: 1.4;
+            margin-bottom: 30px;
+        }
+
+        .options-grid {
+            display: grid;
+            gap: 15px;
+        }
+
+        .option {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--glass-border);
+            padding: 18px 24px;
+            border-radius: 16px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .option:hover {
+            background: rgba(255, 255, 255, 0.08);
+            transform: translateY(-2px);
+            border-color: rgba(255, 255, 255, 0.2);
+        }
+
+        .option.correct {
+            border-color: var(--correct-color);
+            background: rgba(74, 222, 128, 0.1);
+            color: var(--correct-color);
+        }
+
+        .option.wrong {
+            border-color: var(--wrong-color);
+            background: rgba(248, 113, 113, 0.1);
+            color: var(--wrong-color);
+        }
+
+        .explanation-card {
+            margin-top: 30px;
+            padding: 24px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 16px;
+            border-left: 4px solid var(--primary-accent);
+            display: none;
+            animation: fadeIn 0.4s ease;
+        }
+
+        .explanation-title {
+            font-weight: 700;
+            margin-bottom: 8px;
+            color: var(--primary-accent);
+        }
+
+        .navigation {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 40px;
+        }
+
+        button {
+            padding: 12px 30px;
+            border-radius: 12px;
+            border: none;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn-next {
+            background: linear-gradient(135deg, var(--primary-accent), var(--secondary-accent));
+            color: white;
+            box-shadow: 0 4px 15px rgba(76, 201, 240, 0.3);
+        }
+
+        .btn-next:hover:not(:disabled) {
+            transform: scale(1.05);
+            box-shadow: 0 6px 20px rgba(76, 201, 240, 0.4);
+        }
+
+        .btn-next:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .score-circle {
+            width: 150px;
+            height: 150px;
+            border: 8px solid var(--primary-accent);
+            border-radius: 50%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            margin: 40px auto;
+            font-size: 2rem;
+            font-weight: 700;
+        }
+
+        .result-screen {
+            text-align: center;
+            display: none;
+        }
+
+        @media (max-width: 600px) {
+            .quiz-container { padding: 25px; }
+            .question-text { font-size: 1.2rem; }
+            .header { flex-direction: column; align-items: flex-start; gap: 15px; }
+            .progress-container { margin: 10px 0; width: 100%; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="quiz-container" id="quiz-container">
+        <div class="header">
+            <span class="category-badge" id="category">Category</span>
+            <div class="progress-container">
+                <div class="progress-bar" id="progress-bar"></div>
+            </div>
+            <span id="question-index">1 / 38</span>
+        </div>
+
+        <div id="quiz-screen">
+            <div class="question-text" id="question">Loading question...</div>
+            <div class="options-grid" id="options">
+                <!-- Options will be injected here -->
+            </div>
+
+            <div class="explanation-card" id="explanation-card">
+                <div class="explanation-title">Explanation</div>
+                <div id="explanation-text"></div>
+            </div>
+
+            <div class="navigation">
+                <div></div>
+                <button class="btn-next" id="next-btn" disabled>Next Question</button>
+            </div>
+        </div>
+
+        <div class="result-screen" id="result-screen">
+            <h2 style="font-size: 2.5rem; margin-bottom: 10px;">Quiz Complete!</h2>
+            <p>You've navigated through the data galaxy.</p>
+            <div class="score-circle">
+                <span id="final-score">0</span>
+                <span style="font-size: 1rem; opacity: 0.7;">out of 38</span>
+            </div>
+            <p id="performance-msg"></p>
+            <button class="btn-next" onclick="location.reload()" style="margin-top: 30px;">Restart Journey</button>
+        </div>
+    </div>
+
+    <script>
+        const quizData = [
+            {
+                category: "Data Analytics Basics",
+                question: "Data analytics is best defined as:",
+                options: [
+                    "Collection of large volumes of data",
+                    "Storage of structured and unstructured data",
+                    "Scientific process of transforming data into insights for decision-making",
+                    "Visualization of data using graphs"
+                ],
+                answer: 2,
+                explanation: "Data analytics is the science of analyzing raw data in order to make conclusions about that information. It involves processes to uncover insights that can drive better business decisions."
+            },
+            {
+                category: "Data Analytics Basics",
+                question: "Which of the following represents the correct order of data analytics types based on workflow?",
+                options: [
+                    "Predictive → Descriptive → Prescriptive → Diagnostic",
+                    "Descriptive → Diagnostic → Predictive → Prescriptive",
+                    "Diagnostic → Descriptive → Prescriptive → Predictive",
+                    "Descriptive → Predictive → Diagnostic → Prescriptive"
+                ],
+                answer: 1,
+                explanation: "The standard workflow moves from understanding what happened (Descriptive), why it happened (Diagnostic), what will happen (Predictive), to how we can make it happen (Prescriptive)."
+            },
+            {
+                category: "Data Analytics Basics",
+                question: "Under which level of measurement does the variable 'height of a person' fall?",
+                options: ["Nominal", "Ordinal", "Interval", "Ratio"],
+                answer: 3,
+                explanation: "Height is a 'Ratio' scale variable because it has a true zero point (zero height means no height) and the ratio between values is meaningful."
+            },
+            {
+                category: "Probability & Distributions",
+                question: "Which distribution is most appropriate for rare events occurring over a fixed interval?",
+                options: ["Binomial", "Normal", "Poisson", "Uniform"],
+                answer: 2,
+                explanation: "The Poisson distribution models the probability of a number of events occurring in a fixed interval of time or space, especially when events are rare."
+            },
+            {
+                category: "Probability & Distributions",
+                question: "Which of the following is a discrete probability distribution?",
+                options: ["Normal distribution", "Poisson distribution", "Exponential distribution", "Gamma distribution"],
+                answer: 1,
+                explanation: "The Poisson distribution is discrete as it counts integer events. Normal, Exponential, and Gamma are continuous distributions."
+            },
+            {
+                category: "Probability & Distributions",
+                question: "The mean and variance of a Poisson distribution are:",
+                options: ["μ and μ²", "√λ and λ", "λ and √λ", "λ and λ"],
+                answer: 3,
+                explanation: "A unique property of the Poisson distribution is that its mean (λ) is equal to its variance (λ)."
+            },
+            {
+                category: "Probability & Distributions",
+                question: "Which distribution is commonly used to model the time between events in a Poisson process?",
+                options: ["Binomial distribution", "Exponential distribution", "Uniform distribution", "Chi-square distribution"],
+                answer: 1,
+                explanation: "The Exponential distribution models the time between independent events occurring at a constant average rate (a Poisson process)."
+            },
+            {
+                category: "Probability & Distributions",
+                question: "A fair coin is tossed twice. What is the probability of getting exactly one head?",
+                options: ["0.25", "0.5", "0.75", "1.0"],
+                answer: 1,
+                explanation: "Possible outcomes: HH, HT, TH, TT. Exactly one head appears in HT and TH (2 outcomes out of 4). Probability = 2/4 = 0.5."
+            },
+            {
+                category: "Probability & Distributions",
+                question: "If a binomial distribution has n = 10 and p = 0.4, what is the mean?",
+                options: ["2.0", "4.0", "6.0", "10.0"],
+                answer: 1,
+                explanation: "The mean of a binomial distribution is Calculated as n * p. So, 10 * 0.4 = 4.0."
+            },
+            {
+                category: "Probability & Distributions",
+                question: "In a hypergeometric distribution, sampling is done:",
+                options: ["Without replacement", "With replacement", "With constant probability", "From infinite population"],
+                answer: 0,
+                explanation: "Hypergeometric distribution is used when sampling from a finite population without replacement, meaning the probability of success changes each time."
+            },
+            {
+                category: "Probability & Distributions",
+                question: "A dataset has a mean of 50 and a standard deviation of 10. According to the Empirical Rule, approximately what percentage of observations lie between 30 and 70?",
+                options: ["68%", "75%", "95%", "99.7%"],
+                answer: 2,
+                explanation: "30 and 70 are 2 standard deviations away from the mean (50 ± 2*10). The Empirical Rule states ~95% of data falls within 2 standard deviations of the mean."
+            },
+            {
+                category: "Probability & Distributions",
+                question: "A variable is normally distributed with: Mean (μ) = 50, Standard deviation (σ) = 10. What is the Z-score for a value of 65?",
+                options: ["1.0", "1.5", "2.0", "2.5"],
+                answer: 1,
+                explanation: "Z = (X - μ) / σ = (65 - 50) / 10 = 15 / 10 = 1.5."
+            },
+            {
+                category: "Statistical Inference & Hypothesis Testing",
+                question: "Which hypothesis must always contain equality?",
+                options: ["Alternative hypothesis", "Research hypothesis", "Null hypothesis", "Working hypothesis"],
+                answer: 2,
+                explanation: "The Null Hypothesis (H₀) is the statement of 'no effect' or 'no difference' and always contains the equals sign (=, ≤, or ≥)."
+            },
+            {
+                category: "Statistical Inference & Hypothesis Testing",
+                question: "Rejecting a true null hypothesis is called:",
+                options: ["Type II error", "Power of the test", "Type I error", "Sampling error"],
+                answer: 2,
+                explanation: "Type I error occurs when we reject a null hypothesis that is actually true (a 'false positive')."
+            },
+            {
+                category: "Statistical Inference & Hypothesis Testing",
+                question: "Which action reduces both Type I and Type II errors simultaneously?",
+                options: ["Increasing α", "Decreasing α", "Increasing sample size", "Changing tail of test"],
+                answer: 2,
+                explanation: "Increasing sample size provides more information, which reduces the probability of both Type I and Type II errors."
+            },
+            {
+                category: "Statistical Inference & Hypothesis Testing",
+                question: "The width of a confidence interval for the population mean will decrease when:",
+                options: ["Confidence level increases", "Sample size increases", "Population variance increases", "Sample mean increases"],
+                answer: 1,
+                explanation: "A larger sample size (n) appears in the denominator of the standard error formula; as n increases, the margin of error decreases, making the CI narrower."
+            },
+            {
+                category: "Statistical Inference & Hypothesis Testing",
+                question: "A 95% CI for a mean is (46.5, 51.5). Which statement is correct?",
+                options: [
+                    "The population mean has a 95% probability of lying in the interval",
+                    "95% of sample means lie in this interval",
+                    "The CI is constructed so that 95% of such intervals contain μ",
+                    "The confidence level equals the sample mean"
+                ],
+                answer: 2,
+                explanation: "Confidence levels refer to the long-run success rate of the procedure. We expect 95% of intervals constructed this way to contain the true population mean."
+            },
+            {
+                category: "Statistical Inference & Hypothesis Testing",
+                question: "When σ² is unknown and sample size is small, the appropriate distribution for CI estimation of μ is:",
+                options: ["Z distribution", "Chi-square distribution", "F distribution", "t distribution"],
+                answer: 3,
+                explanation: "The Student's t-distribution is used when the population standard deviation is unknown and the sample size is small (typically n < 30)."
+            },
+            {
+                category: "Statistical Inference & Hypothesis Testing",
+                question: "Sample size (n) = 36, mean = 34.6, σ = 12. H₀: μ ≤ 30, Ha: μ > 30. If tested at 95% confidence, the null hypothesis should:",
+                options: ["not be rejected", "be rejected", "Not enough information", "None of these"],
+                answer: 1,
+                explanation: "Z-score = (34.6 - 30) / (12 / √36) = 4.6 / 2 = 2.3. The critical value for a one-tailed test at 95% is 1.645. Since 2.3 > 1.645, we reject H₀."
+            },
+            {
+                category: "Statistical Inference & Hypothesis Testing",
+                question: "In testing H₀: μ=20 vs H₁: μ>20 with α = 0.05, the rejection region for a Z test is:",
+                options: ["Z < -1.96", "Z > 1.645", "|Z| > 1.96", "Z < -1.645"],
+                answer: 1,
+                explanation: "This is a right-tailed test. For α = 0.05, the critical value is 1.645, so we reject if Z > 1.645."
+            },
+            {
+                category: "Regression & ANOVA",
+                question: "In simple linear regression, the coefficient b (slope) represents:",
+                options: [
+                    "Average value of Y",
+                    "Change in Y for a one-unit change in X",
+                    "Change in X for a one-unit change in Y",
+                    "Total variation in data"
+                ],
+                answer: 1,
+                explanation: "The slope (b) measures the expected change in the dependent variable (Y) for every single-unit increase in the independent variable (X)."
+            },
+            {
+                category: "Regression & ANOVA",
+                question: "Least squares method minimizes:",
+                options: ["Σ(residuals)", "(residuals)", "(residuals²)", "Σ(y²)"],
+                answer: 2,
+                explanation: "The 'Ordinary Least Squares' (OLS) method works by minimizing the sum of the squares of the vertical offsets (residuals) between each data point and the fitted line."
+            },
+            {
+                category: "Regression & ANOVA",
+                question: "Standardized residuals are primarily used to:",
+                options: ["Detect outliers", "Increase R²", "Reduce bias in coefficients", "Transform dependent variables"],
+                answer: 0,
+                explanation: "Standardizing residuals (dividing them by their standard deviation) helps identify outliers, as points with a standardized residual beyond ±2 or ±3 are likely outliers."
+            },
+            {
+                category: "Regression & ANOVA",
+                question: "A residual plot showing a clear curved pattern suggests:",
+                options: [
+                    "The model fits perfectly",
+                    "Constant variance exists",
+                    "A linear model may be inappropriate",
+                    "Errors are normally distributed"
+                ],
+                answer: 2,
+                explanation: "A healthy residual plot should look like random noise. Any discernible pattern (like a curve) indicates that the linear model isn't capturing the trend correctly."
+            },
+            {
+                category: "Regression & ANOVA",
+                question: "ANOVA is preferred over multiple t-tests because it:",
+                options: [
+                    "Reduces Type II error",
+                    "Eliminates assumptions",
+                    "Controls family-wise Type I error",
+                    "Works only for large samples"
+                ],
+                answer: 2,
+                explanation: "Running multiple t-tests increases the chance of making a Type I error across the whole set (family-wise error). ANOVA controls this by testing for any difference among means in a single step."
+            },
+            {
+                category: "Regression & ANOVA",
+                question: "In ANOVA, if treatment means are far apart relative to within-group variability, F value will be:",
+                options: ["Close to 0", "Close to 1", "Large", "Negative"],
+                answer: 2,
+                explanation: "F = (Between-group Variance) / (Within-group Variance). If the means are far apart, the between-group variance is large, leading to a large F-value."
+            },
+            {
+                category: "Regression & ANOVA",
+                question: "In Randomized Block Design (RBD) the purpose of blocking is to:",
+                options: [
+                    "Increase within-group variation",
+                    "Remove nuisance variation",
+                    "Increase error variance",
+                    "Increase Type II error"
+                ],
+                answer: 1,
+                explanation: "Blocking groups similar units together to account for (and remove) the variation caused by known, non-experimental factors (nuisance variables)."
+            },
+            {
+                category: "Machine Learning & Classification",
+                question: "Which of the following correctly defines classification accuracy?",
+                options: ["(TP+FP)/Total", "(TP+TN)/Total", "(FP+FN)/Total", "TP/(TP+FN)"],
+                answer: 1,
+                explanation: "Accuracy is the ratio of correctly predicted observations (True Positives + True Negatives) to the total number of observations."
+            },
+            {
+                category: "Machine Learning & Classification",
+                question: "Which metric measures the proportion of actual positives correctly identified?",
+                options: ["Precision", "Recall (Sensitivity)", "Specificity", "Accuracy"],
+                answer: 1,
+                explanation: "Recall (or Sensitivity) answers the question: 'Of all the actual positive cases, how many did we correctly predict?'"
+            },
+            {
+                category: "Machine Learning & Classification",
+                question: "In an ROC curve, the x-axis represents:",
+                options: ["Sensitivity", "Precision", "False Positive Rate", "Accuracy"],
+                answer: 2,
+                explanation: "A Receiver Operating Characteristic (ROC) curve plots True Positive Rate (Sensitivity) on the y-axis and False Positive Rate (1 - Specificity) on the x-axis."
+            },
+            {
+                category: "Machine Learning & Classification",
+                question: "In logistic regression, the relationship between predictors and probability is modeled using:",
+                options: ["linear probability function", "exponential function", "logistic (sigmoid) function", "quadratic function"],
+                answer: 2,
+                explanation: "The logistic function (S-curve) maps any real-valued number into a value between 0 and 1, representing a probability."
+            },
+            {
+                category: "Machine Learning & Classification",
+                question: "The Euclidean distance formula is used to:",
+                options: ["Measure similarity", "Normalize data", "Measure dissimilarity", "Reduce dimensions"],
+                answer: 2,
+                explanation: "Distance metrics like Euclidean distance measure how far apart points are in space, which is essentially a measure of dissimilarity (larger distance = less similar)."
+            },
+            {
+                category: "Machine Learning & Classification",
+                question: "Which method is most sensitive to outliers in clustering?",
+                options: ["Hierarchical clustering", "K-means clustering", "Chi-square test", "Regression"],
+                answer: 1,
+                explanation: "K-means clustering uses the arithmetic mean to define cluster centers, which is highly influenced by extreme values or outliers."
+            },
+            {
+                category: "Machine Learning & Classification",
+                question: "Which of the following ensures binary splits in decision trees?",
+                options: ["Information gain", "Gain ratio", "Gini index", "Entropy"],
+                answer: 2,
+                explanation: "The Gini index is widely used (e.g., in CART algorithm) to decide the best split and typically results in binary divisions."
+            },
+            {
+                category: "Python & Coding",
+                question: "What is the purpose of: tbl = pd.read_excel('regr.xlsx')?",
+                options: [
+                    "To read an Excel dataset into a pandas DataFrame",
+                    "To create a new Excel file",
+                    "To export regression results to Excel",
+                    "To convert a DataFrame into a NumPy array"
+                ],
+                answer: 0,
+                explanation: "The `pd.read_excel()` function in the Pandas library is specifically used to load Excel file data into a tabular structure called a DataFrame."
+            },
+            {
+                category: "Python & Coding",
+                question: "In Pandas, which command is used to select rows by integer position?",
+                options: ["df.loc", "df.select()", "df.iloc", "df.index"],
+                answer: 2,
+                explanation: "`.iloc` is used for integer-location based indexing, while `.loc` is used for label-based indexing."
+            },
+            {
+                category: "Python & Coding",
+                question: "What will be the output of: from scipy.stats import poisson; print(poisson.var(4))",
+                options: ["2.0", "4.0", "8.0", "16.0"],
+                answer: 1,
+                explanation: "As previously noted, the variance of a Poisson distribution is equal to its parameter λ (mean). Here λ = 4, so variance = 4."
+            },
+            {
+                category: "Python & Coding",
+                question: "What will be the output of: from scipy.stats import norm; print(norm.pdf(0))",
+                options: ["0.0", "0.25", "0.399", "1.0"],
+                answer: 2,
+                explanation: "For a standard normal distribution (mean=0, SD=1), the value of the probability density function (PDF) at x=0 is approximately 0.3989."
+            }
+        ];
+
+        let currentQuestion = 0;
+        let score = 0;
+        let answered = false;
+
+        const container = document.getElementById('quiz-container');
+        const nextBtn = document.getElementById('next-btn');
+        const progressBar = document.getElementById('progress-bar');
+        const resultScreen = document.getElementById('result-screen');
+        const quizScreen = document.getElementById('quiz-screen');
+
+        function loadQuestion() {
+            const data = quizData[currentQuestion];
+            document.getElementById('category').textContent = data.category;
+            document.getElementById('question-index').textContent = `${currentQuestion + 1} / ${quizData.length}`;
+            document.getElementById('question').textContent = data.question;
+            
+            const optionsContainer = document.getElementById('options');
+            optionsContainer.innerHTML = '';
+            
+            data.options.forEach((option, index) => {
+                const div = document.createElement('div');
+                div.className = 'option';
+                div.textContent = option;
+                div.onclick = () => selectOption(index, div);
+                optionsContainer.appendChild(div);
+            });
+
+            document.getElementById('explanation-card').style.display = 'none';
+            nextBtn.disabled = true;
+            answered = false;
+            
+            // Update Progress
+            const progress = ((currentQuestion) / quizData.length) * 100;
+            progressBar.style.width = `${progress}%`;
+        }
+
+        function selectOption(index, element) {
+            if (answered) return;
+            
+            const data = quizData[currentQuestion];
+            const allOptions = document.querySelectorAll('.option');
+            
+            answered = true;
+            if (index === data.answer) {
+                element.classList.add('correct');
+                score++;
+            } else {
+                element.classList.add('wrong');
+                allOptions[data.answer].classList.add('correct');
+            }
+
+            // Show explanation
+            document.getElementById('explanation-text').textContent = data.explanation;
+            document.getElementById('explanation-card').style.display = 'block';
+            
+            nextBtn.disabled = false;
+            if (currentQuestion === quizData.length - 1) {
+                nextBtn.textContent = "Finish Quiz";
+            }
+        }
+
+        nextBtn.onclick = () => {
+            currentQuestion++;
+            if (currentQuestion < quizData.length) {
+                loadQuestion();
+            } else {
+                showResults();
+            }
+        };
+
+        function showResults() {
+            quizScreen.style.display = 'none';
+            resultScreen.style.display = 'block';
+            progressBar.style.width = '100%';
+            document.getElementById('final-score').textContent = score;
+            
+            const percentage = (score / quizData.length) * 100;
+            let msg = "";
+            if (percentage >= 90) msg = "Stellar performance! You're a Data Sage.";
+            else if (percentage >= 70) msg = "Great job! Your analytics skills are sharp.";
+            else if (percentage >= 50) msg = "Solid foundation. Keep training.";
+            else msg = "The universe is vast. Keep exploring and learning!";
+            
+            document.getElementById('performance-msg').textContent = msg;
+        }
+
+        loadQuestion();
+    </script>
+</body>
+</html>
