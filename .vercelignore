@@ -9,5 +9,5 @@ aws_docs/
 .git
 
 # Keep the web files
-!quiz.html
+!index.html
 !vercel.json
