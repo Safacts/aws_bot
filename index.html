@@ -48,6 +48,30 @@
             font-size: 15px;
             line-height: 1.6;
         }
+        /* GLOBAL SCROLLBARS */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--border2);
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--text3);
+        }
+
+        /* UTILITIES */
+        .wide-wrap {
+            max-width: 1300px !important;
+            margin: 0 auto;
+        }
 
         .noise {
             position: fixed;
@@ -988,19 +1012,20 @@
         /* STUDY CENTER SPECIFIC */
         .study-layout {
             display: flex;
-            gap: 24px;
-            margin-top: 20px;
+            gap: 32px;
+            margin-top: 24px;
             align-items: flex-start;
         }
 
         .study-sidebar {
-            width: 260px;
+            width: 280px;
+            flex-shrink: 0;
             position: sticky;
             top: 100px;
             background: var(--bg3);
             border: 1px solid var(--border);
             border-radius: var(--r2);
-            padding: 20px;
+            padding: 24px;
             max-height: calc(100vh - 140px);
             overflow-y: auto;
         }
@@ -1010,8 +1035,8 @@
             text-transform: uppercase;
             letter-spacing: 0.1em;
             color: var(--text3);
-            margin-bottom: 16px;
-            padding-bottom: 8px;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
             border-bottom: 1px solid var(--border);
         }
 
@@ -1020,7 +1045,7 @@
         }
 
         .toc-item {
-            margin-bottom: 8px;
+            margin-bottom: 10px;
         }
 
         .toc-link {
@@ -1028,120 +1053,131 @@
             text-decoration: none;
             font-size: 13px;
             display: flex;
-            gap: 8px;
+            gap: 10px;
             transition: 0.2s;
             cursor: pointer;
-            line-height: 1.4;
+            line-height: 1.5;
         }
 
         .toc-link:hover { color: var(--aws); }
-        .toc-link.active { color: var(--aws); font-weight: 500; }
+        .toc-link.active { color: var(--aws); font-weight: 600; }
 
         .study-content-card {
             flex: 1;
             background: var(--bg2);
             border: 1px solid var(--border);
             border-radius: var(--r2);
-            padding: 32px;
-            min-height: 400px;
+            padding: 40px;
+            min-height: 500px;
             overflow-x: hidden;
+            box-shadow: 0 4px 24px rgba(0,0,0,0.2);
         }
 
         .markdown-body {
             color: var(--text);
-            line-height: 1.75;
-            font-size: 15px;
+            line-height: 1.8;
+            font-size: 16px;
         }
 
-        .markdown-body h1 { font-size: 28px; margin: 32px 0 16px; color: var(--aws); }
-        .markdown-body h2 { font-size: 22px; margin: 28px 0 14px; color: var(--aws); border-bottom: 1px solid var(--border); padding-bottom: 8px; }
-        .markdown-body h3 { font-size: 18px; margin: 24px 0 12px; color: var(--aws); }
+        .markdown-body h1 { font-size: 32px; margin: 0 0 24px; color: var(--aws); border-bottom: 2px solid var(--border); padding-bottom: 12px; }
+        .markdown-body h2 { font-size: 24px; margin: 40px 0 16px; color: var(--aws); border-bottom: 1px solid var(--border); padding-bottom: 10px; }
+        .markdown-body h3 { font-size: 19px; margin: 32px 0 12px; color: var(--aws); }
 
-        .markdown-body p { margin-bottom: 18px; }
-        .markdown-body ul { margin-bottom: 18px; padding-left: 20px; }
-        .markdown-body li { margin-bottom: 10px; }
+        .markdown-body p { margin-bottom: 20px; }
+        .markdown-body ul, .markdown-body ol { margin-bottom: 20px; padding-left: 24px; }
+        .markdown-body li { margin-bottom: 12px; }
         
         .mobile-toc-toggle {
             display: none;
             position: fixed;
-            bottom: 24px;
-            right: 24px;
-            width: 56px;
-            height: 56px;
+            bottom: 30px;
+            right: 30px;
+            width: 60px;
+            height: 60px;
             border-radius: 50%;
             background: var(--aws);
             color: white;
             border: none;
-            box-shadow: 0 4px 25px rgba(0,0,0,0.4);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.5);
             z-index: 1000;
             align-items: center;
             justify-content: center;
             cursor: pointer;
-            transition: 0.2s;
+            transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
         
         .mobile-toc-toggle:active { transform: scale(0.9); }
 
         .toc-card {
-            background: rgba(255,153,0,0.05);
-            border: 1px dashed var(--aws);
+            background: rgba(255,153,0,0.03);
+            border: 1px solid var(--border);
             border-radius: var(--r2);
-            padding: 24px;
-            margin-bottom: 32px;
+            padding: 28px;
+            margin-bottom: 40px;
         }
 
         .toc-card h4 {
-            margin: 0 0 16px 0;
+            margin: 0 0 20px 0;
             color: var(--aws);
             display: flex;
             align-items: center;
-            gap: 10px;
-            font-size: 16px;
+            gap: 12px;
+            font-size: 17px;
+            font-weight: 600;
         }
 
         .toc-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-            gap: 12px;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 14px;
         }
 
         .toc-grid-link {
             color: var(--text2);
             text-decoration: none;
             font-size: 14px;
-            padding: 8px 12px;
+            padding: 12px 16px;
             background: var(--bg3);
             border: 1px solid var(--border);
-            border-radius: 8px;
+            border-radius: 10px;
             transition: 0.2s;
-            display: block;
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
+
+        .toc-grid-link::before { content: '→'; color: var(--aws); opacity: 0.6; }
 
         .toc-grid-link:hover {
-            color: var(--aws);
+            color: var(--text);
             border-color: var(--aws);
-            background: rgba(255,153,0,0.1);
+            background: rgba(255,153,0,0.08);
+            transform: translateY(-2px);
         }
 
-        @media(max-width: 900px) {
+        @media(max-width: 1100px) {
             .study-layout { flex-direction: column; }
             .study-sidebar { 
                 position: fixed;
                 top: 0;
-                left: -300px;
+                left: -320px;
                 height: 100vh;
                 max-height: 100vh;
                 margin: 0;
                 z-index: 2000;
-                transition: 0.3s;
+                transition: 0.4s cubic-bezier(0.4, 0, 0.2, 1);
                 border: none;
                 border-radius: 0;
-                width: 280px;
+                width: 300px;
+                background: var(--bg2);
             }
-            .study-sidebar.open { left: 0; box-shadow: 20px 0 50px rgba(0,0,0,0.5); }
+            .study-sidebar.open { left: 0; box-shadow: 24px 0 64px rgba(0,0,0,0.8); }
             .mobile-toc-toggle { display: flex; }
-            .study-content-card { padding: 20px; }
+            .study-content-card { padding: 32px 24px; border: none; background: transparent; }
             .toc-grid { grid-template-columns: 1fr; }
+            .notes-wrap.wide-wrap { padding: 0 !important; }
+            .hero-mini { margin: 24px 16px !important; }
+            .notes-tabs { padding: 0 16px; margin-bottom: 20px; }
         }
 
         .markdown-body code {
@@ -1299,7 +1335,7 @@
 
     <!-- AWS STUDY CENTER PAGE -->
     <div class="page" id="page-aws-study">
-        <div class="notes-wrap">
+        <div class="notes-wrap wide-wrap">
             <div class="hero-mini" style="margin-bottom: 24px;">
                 <h2 style="margin:0; font-size: 24px;">AWS Study Center</h2>
                 <p style="color: var(--text3); font-size: 14px; margin: 4px 0 0 0;">Comprehensive guides for your exam
