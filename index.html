@@ -1,500 +1,2054 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AWS Data Analytics Practice Quiz</title>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <title>Aadisheshu's Study Library</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap"
+        rel="stylesheet">
     <style>
         :root {
-            --bg-color: #050b1a;
-            --card-bg: rgba(13, 22, 45, 0.7);
-            --primary-accent: #4cc9f0;
-            --secondary-accent: #7209b7;
-            --text-color: #e0e6ed;
-            --correct-color: #4ade80;
-            --wrong-color: #f87171;
-            --glass-border: rgba(255, 255, 255, 0.1);
+            --bg: #0a0a0f;
+            --bg2: #111118;
+            --bg3: #18181f;
+            --card: #1c1c25;
+            --card2: #22222c;
+            --border: rgba(255, 255, 255, 0.07);
+            --border2: rgba(255, 255, 255, 0.12);
+            --text: #e8e8f0;
+            --text2: #9090a8;
+            --text3: #5a5a72;
+            --aws: #ff9900;
+            --aws2: #e8850a;
+            --nptel: #6c63ff;
+            --nptel2: #5549e8;
+            --correct: #22c55e;
+            --wrong: #ef4444;
+            --info: #3b82f6;
+            --r: 10px;
+            --r2: 14px;
+            --r3: 18px;
         }
 
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            font-family: 'Outfit', sans-serif;
         }
 
         body {
-            background: radial-gradient(circle at 50% 50%, #1a1a2e 0%, #050b1a 100%);
-            color: var(--text-color);
+            font-family: 'Sora', sans-serif;
+            background: var(--bg);
+            color: var(--text);
             min-height: 100vh;
+            font-size: 15px;
+            line-height: 1.6;
+        }
+
+        .noise {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 0;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+        }
+
+        /* NAV */
+        .nav {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: rgba(10, 10, 15, 0.92);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border);
+            padding: 0 24px;
             display: flex;
-            justify-content: center;
             align-items: center;
-            overflow-x: hidden;
-            padding: 15px;
+            gap: 0;
         }
 
-        body::before {
-            content: "";
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            background-image: 
-                radial-gradient(white, rgba(255,255,255,.2) 2px, transparent 40px),
-                radial-gradient(white, rgba(255,255,255,.15) 1px, transparent 30px);
-            background-size: 550px 550px, 350px 350px;
-            background-position: 0 0, 40px 60px;
-            opacity: 0.1;
-            z-index: -1;
-        }
-
-        .quiz-container {
-            width: 100%;
-            max-width: 800px;
-            background: var(--card-bg);
-            backdrop-filter: blur(15px);
-            border: 1px solid var(--glass-border);
-            border-radius: 24px;
-            padding: 40px;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-            position: relative;
-        }
-
-        .batch-selector {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 25px;
-            background: rgba(255, 255, 255, 0.05);
-            padding: 5px;
-            border-radius: 14px;
-            border: 1px solid var(--glass-border);
-        }
-
-        .batch-btn {
-            flex: 1;
-            padding: 10px;
-            border-radius: 10px;
-            font-size: 0.9rem;
-            background: transparent;
-            color: var(--text-color);
-            border: none;
-            cursor: pointer;
-            transition: all 0.2s ease;
-        }
-
-        .batch-btn.active {
-            background: linear-gradient(135deg, var(--primary-accent), var(--secondary-accent));
-            color: white;
-            box-shadow: 0 4px 12px rgba(76, 201, 240, 0.2);
-        }
-
-        .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 30px;
-        }
-
-        .category-badge {
-            background: rgba(76, 201, 240, 0.1);
-            color: var(--primary-accent);
-            padding: 6px 16px;
-            border-radius: 100px;
-            font-size: 0.85rem;
+        .nav-logo {
+            font-size: 13px;
             font-weight: 600;
-            border: 1px solid rgba(76, 201, 240, 0.2);
+            color: var(--text2);
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            padding: 16px 0;
+            margin-right: 32px;
+            flex-shrink: 0;
         }
 
-        .progress-container {
-            flex-grow: 1;
-            margin: 0 20px;
+        .nav-logo span {
+            color: var(--aws);
+        }
+
+        .nav-tabs {
+            display: flex;
+            gap: 0;
+            flex: 1;
+            overflow-x: auto;
+            scrollbar-width: none;
+        }
+
+        .nav-tabs::-webkit-scrollbar {
+            display: none;
+        }
+
+        .nav-tab {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 16px 20px;
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text3);
+            cursor: pointer;
+            border: none;
+            background: none;
+            border-bottom: 2px solid transparent;
+            transition: all 0.15s;
+            white-space: nowrap;
+            font-family: 'Sora', sans-serif;
+        }
+
+        .nav-tab:hover {
+            color: var(--text2);
+        }
+
+        .nav-tab.active {
+            color: var(--text);
+            border-bottom-color: var(--aws);
+        }
+
+        .nav-tab.active.nptel-tab {
+            border-bottom-color: var(--nptel);
+        }
+
+        .tab-dot {
+            width: 6px;
             height: 6px;
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 10px;
+            border-radius: 50%;
+            background: currentColor;
+            opacity: 0.6;
+        }
+
+        /* PAGES */
+        .page {
+            display: none;
+            min-height: calc(100vh - 53px);
+        }
+
+        .page.active {
+            display: block;
+        }
+
+        /* HERO */
+        .hero {
+            padding: 64px 24px 48px;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .hero-eyebrow {
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            color: var(--aws);
+            margin-bottom: 16px;
+        }
+
+        .hero h1 {
+            font-size: clamp(28px, 5vw, 48px);
+            font-weight: 300;
+            line-height: 1.15;
+            color: var(--text);
+            margin-bottom: 16px;
+        }
+
+        .hero h1 strong {
+            font-weight: 600;
+        }
+
+        .hero p {
+            font-size: 16px;
+            color: var(--text2);
+            max-width: 560px;
+            margin-bottom: 36px;
+        }
+
+        .exam-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            background: var(--card);
+            border: 1px solid var(--border2);
+            border-radius: 100px;
+            padding: 10px 18px;
+            font-size: 13px;
+            color: var(--text2);
+        }
+
+        .badge-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--correct);
+            box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.15);
+        }
+
+        /* STAT GRID */
+        .stat-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 12px;
+            max-width: 900px;
+            margin: 0 auto 48px;
+            padding: 0 24px;
+        }
+
+        .stat-card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: var(--r2);
+            padding: 20px;
+        }
+
+        .stat-label {
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--text3);
+            margin-bottom: 8px;
+        }
+
+        .stat-value {
+            font-size: 26px;
+            font-weight: 600;
+            color: var(--text);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .stat-sub {
+            font-size: 12px;
+            color: var(--text3);
+            margin-top: 4px;
+        }
+
+        /* DOMAIN CARDS */
+        .section-title {
+            font-size: 12px;
+            font-weight: 600;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            color: var(--text3);
+            margin-bottom: 16px;
+        }
+
+        .domains-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 12px;
+            max-width: 900px;
+            margin: 0 auto 48px;
+            padding: 0 24px;
+        }
+
+        .domain-card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: var(--r2);
+            padding: 20px;
+            cursor: pointer;
+            transition: all 0.15s;
+            position: relative;
             overflow: hidden;
         }
 
-        .progress-bar {
-            height: 100%;
-            background: linear-gradient(90deg, var(--primary-accent), var(--secondary-accent));
-            width: 0%;
-            transition: width 0.4s ease;
+        .domain-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: var(--accent, var(--aws));
+            transform: scaleX(0);
+            transform-origin: left;
+            transition: transform 0.2s;
         }
 
-        .question-text {
-            font-size: 1.5rem;
-            font-weight: 600;
-            line-height: 1.4;
-            margin-bottom: 25px;
+        .domain-card:hover {
+            border-color: var(--border2);
+            background: var(--card2);
         }
 
-        .options-grid {
+        .domain-card:hover::before {
+            transform: scaleX(1);
+        }
+
+        .domain-pct {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            font-weight: 500;
+            color: var(--accent, var(--aws));
+            background: color-mix(in srgb, var(--accent, var(--aws)) 12%, transparent);
+            padding: 3px 8px;
+            border-radius: 100px;
+            display: inline-block;
+            margin-bottom: 12px;
+        }
+
+        .domain-name {
+            font-weight: 500;
+            color: var(--text);
+            margin-bottom: 6px;
+            font-size: 14px;
+        }
+
+        .domain-desc {
+            font-size: 12px;
+            color: var(--text3);
+            line-height: 1.5;
+        }
+
+        /* QUICK REFERENCE */
+        .ref-section {
+            max-width: 900px;
+            margin: 0 auto 48px;
+            padding: 0 24px;
+        }
+
+        .ref-grid {
             display: grid;
-            gap: 15px;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 12px;
         }
 
-        .option {
-            background: rgba(255, 255, 255, 0.03);
-            border: 1px solid var(--glass-border);
-            padding: 18px 24px;
-            border-radius: 16px;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            position: relative;
+        .ref-card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: var(--r2);
+            padding: 20px;
+        }
+
+        .ref-card h4 {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text);
+            margin-bottom: 14px;
             display: flex;
             align-items: center;
+            gap: 8px;
         }
 
-        .option:hover {
-            background: rgba(255, 255, 255, 0.08);
-            transform: translateY(-2px);
-            border-color: rgba(255, 255, 255, 0.2);
-        }
-
-        .option.correct {
-            border-color: var(--correct-color);
-            background: rgba(74, 222, 128, 0.1);
-            color: var(--correct-color);
-        }
-
-        .option.wrong {
-            border-color: var(--wrong-color);
-            background: rgba(248, 113, 113, 0.1);
-            color: var(--wrong-color);
-        }
-
-        .explanation-card {
-            margin-top: 30px;
-            padding: 24px;
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 16px;
-            border-left: 4px solid var(--primary-accent);
-            display: none;
-            animation: fadeIn 0.4s ease;
-        }
-
-        .explanation-title {
+        .ref-icon {
+            width: 20px;
+            height: 20px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
             font-weight: 700;
-            margin-bottom: 8px;
-            color: var(--primary-accent);
+            background: color-mix(in srgb, var(--aws) 15%, transparent);
+            color: var(--aws);
         }
 
-        .navigation {
+        .ref-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .ref-table td {
+            padding: 6px 0;
+            font-size: 12px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .ref-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .ref-table td:first-child {
+            color: var(--text2);
+        }
+
+        .ref-table td:last-child {
+            text-align: right;
+            color: var(--text3);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+        }
+
+        .kw-tag {
+            display: inline-block;
+            background: var(--bg3);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 3px 8px;
+            font-size: 11px;
+            color: var(--text2);
+            margin: 3px 2px;
+        }
+
+        .kw-tag.cost {
+            color: var(--aws);
+            border-color: color-mix(in srgb, var(--aws) 25%, transparent);
+            background: color-mix(in srgb, var(--aws) 8%, transparent);
+        }
+
+        .kw-tag.secure {
+            color: var(--info);
+            border-color: color-mix(in srgb, var(--info) 25%, transparent);
+            background: color-mix(in srgb, var(--info) 8%, transparent);
+        }
+
+        .kw-tag.server {
+            color: var(--correct);
+            border-color: color-mix(in srgb, var(--correct) 25%, transparent);
+            background: color-mix(in srgb, var(--correct) 8%, transparent);
+        }
+
+        /* QUIZ PAGE */
+        .quiz-wrap {
+            max-width: 700px;
+            margin: 0 auto;
+            padding: 32px 24px;
+        }
+
+        .quiz-controls {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 28px;
+            flex-wrap: wrap;
+        }
+
+        .filter-btn {
+            padding: 7px 14px;
+            border-radius: 100px;
+            border: 1px solid var(--border2);
+            background: transparent;
+            color: var(--text2);
+            font-size: 12px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.15s;
+            font-family: 'Sora', sans-serif;
+        }
+
+        .filter-btn:hover {
+            background: var(--card2);
+        }
+
+        .filter-btn.active {
+            background: var(--aws);
+            border-color: var(--aws);
+            color: #000;
+            font-weight: 600;
+        }
+
+        .filter-btn.active.nptel {
+            background: var(--nptel);
+            border-color: var(--nptel);
+        }
+
+        .quiz-progress {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 28px;
+        }
+
+        .progress-track {
+            flex: 1;
+            height: 4px;
+            background: var(--card2);
+            border-radius: 2px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            border-radius: 2px;
+            background: var(--aws);
+            transition: width 0.3s ease;
+        }
+
+        .q-counter {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            color: var(--text3);
+            white-space: nowrap;
+        }
+
+        .q-score-live {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            color: var(--correct);
+            white-space: nowrap;
+        }
+
+        .question-card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: var(--r3);
+            padding: 28px;
+            margin-bottom: 14px;
+        }
+
+        .q-domain {
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--aws);
+            margin-bottom: 14px;
+        }
+
+        .q-text {
+            font-size: 16px;
+            font-weight: 400;
+            line-height: 1.6;
+            color: var(--text);
+        }
+
+        .options-list {
+            display: grid;
+            gap: 10px;
+            margin-top: 24px;
+        }
+
+        .opt {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            background: var(--bg3);
+            border: 1px solid var(--border);
+            border-radius: var(--r);
+            padding: 14px 16px;
+            cursor: pointer;
+            transition: all 0.15s;
+            font-size: 14px;
+            color: var(--text2);
+            font-family: 'Sora', sans-serif;
+            text-align: left;
+        }
+
+        .opt:hover:not(.locked) {
+            border-color: var(--border2);
+            color: var(--text);
+            background: var(--card2);
+        }
+
+        .opt-label {
+            width: 22px;
+            height: 22px;
+            border-radius: 6px;
+            border: 1px solid var(--border2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text3);
+            flex-shrink: 0;
+            margin-top: 1px;
+            font-family: 'JetBrains Mono', monospace;
+            transition: all 0.15s;
+        }
+
+        .opt.correct {
+            border-color: var(--correct);
+            background: color-mix(in srgb, var(--correct) 8%, transparent);
+            color: var(--text);
+        }
+
+        .opt.correct .opt-label {
+            background: var(--correct);
+            border-color: var(--correct);
+            color: #000;
+        }
+
+        .opt.wrong {
+            border-color: var(--wrong);
+            background: color-mix(in srgb, var(--wrong) 8%, transparent);
+            color: var(--text2);
+        }
+
+        .opt.wrong .opt-label {
+            background: var(--wrong);
+            border-color: var(--wrong);
+            color: #fff;
+        }
+
+        .opt.dimmed {
+            opacity: 0.4;
+        }
+
+        .opt.locked {
+            cursor: default;
+        }
+
+        .explanation {
+            margin-top: 16px;
+            padding: 14px 16px;
+            background: color-mix(in srgb, var(--info) 6%, transparent);
+            border: 1px solid color-mix(in srgb, var(--info) 20%, transparent);
+            border-radius: var(--r);
+            font-size: 13px;
+            color: var(--text2);
+            line-height: 1.65;
+            display: none;
+        }
+
+        .explanation.show {
+            display: block;
+        }
+
+        .explanation strong {
+            color: var(--info);
+        }
+
+        .quiz-nav {
             display: flex;
             justify-content: space-between;
-            margin-top: 40px;
+            align-items: center;
+            margin-top: 20px;
         }
 
-        button {
-            padding: 12px 30px;
-            border-radius: 12px;
+        .btn-primary {
+            padding: 11px 24px;
+            background: var(--aws);
             border: none;
+            border-radius: var(--r);
+            color: #000;
             font-weight: 600;
+            font-size: 13px;
             cursor: pointer;
-            transition: all 0.2s ease;
+            transition: all 0.15s;
+            font-family: 'Sora', sans-serif;
+            display: flex;
+            align-items: center;
+            gap: 6px;
         }
 
-        .btn-next {
-            background: linear-gradient(135deg, var(--primary-accent), var(--secondary-accent));
-            color: white;
-            box-shadow: 0 4px 15px rgba(76, 201, 240, 0.3);
+        .btn-primary:hover {
+            background: var(--aws2);
         }
 
-        .btn-next:hover:not(:disabled) {
-            transform: scale(1.05);
-            box-shadow: 0 6px 20px rgba(76, 201, 240, 0.4);
-        }
-
-        .btn-next:disabled {
-            opacity: 0.5;
+        .btn-primary:disabled {
+            opacity: 0.35;
             cursor: not-allowed;
         }
 
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
+        .btn-ghost {
+            padding: 11px 20px;
+            background: transparent;
+            border: 1px solid var(--border2);
+            border-radius: var(--r);
+            color: var(--text2);
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.15s;
+            font-family: 'Sora', sans-serif;
         }
 
-        .score-circle {
-            width: 150px;
-            height: 150px;
-            border: 8px solid var(--primary-accent);
+        .btn-ghost:hover {
+            background: var(--card2);
+            color: var(--text);
+        }
+
+        /* RESULT */
+        .result-wrap {
+            text-align: center;
+            padding: 48px 24px;
+        }
+
+        .score-ring {
+            width: 120px;
+            height: 120px;
             border-radius: 50%;
             display: flex;
             flex-direction: column;
-            justify-content: center;
             align-items: center;
-            margin: 40px auto;
-            font-size: 2rem;
-            font-weight: 700;
+            justify-content: center;
+            margin: 0 auto 24px;
+            border: 4px solid var(--aws);
+            background: color-mix(in srgb, var(--aws) 8%, transparent);
         }
 
-        .result-screen {
-            text-align: center;
+        .score-num {
+            font-size: 30px;
+            font-weight: 700;
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--aws);
+        }
+
+        .score-denom {
+            font-size: 13px;
+            color: var(--text3);
+        }
+
+        .result-msg {
+            font-size: 18px;
+            font-weight: 500;
+            margin-bottom: 8px;
+        }
+
+        .result-sub {
+            font-size: 14px;
+            color: var(--text2);
+            margin-bottom: 32px;
+        }
+
+        /* NOTES PAGE */
+        .notes-wrap {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 32px 24px;
+        }
+
+        .notes-tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 28px;
+            flex-wrap: wrap;
+        }
+
+        .notes-tab {
+            padding: 8px 16px;
+            border-radius: 100px;
+            border: 1px solid var(--border2);
+            background: transparent;
+            color: var(--text2);
+            font-size: 12px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.15s;
+            font-family: 'Sora', sans-serif;
+        }
+
+        .notes-tab.active {
+            background: var(--card2);
+            border-color: var(--aws);
+            color: var(--aws);
+        }
+
+        .notes-panel {
             display: none;
         }
 
-        @media (max-width: 600px) {
-            .quiz-container { padding: 20px; border-radius: 16px; }
-            .question-text { font-size: 1.15rem; margin-bottom: 20px; }
-            .header { flex-direction: row; align-items: center; gap: 10px; margin-bottom: 20px; }
-            .category-badge { font-size: 0.75rem; padding: 4px 10px; }
-            .progress-container { margin: 0 10px; }
-            #question-index { font-size: 0.8rem; min-width: 45px; }
-            .option { padding: 14px 18px; font-size: 0.95rem; border-radius: 12px; }
-            .batch-btn { font-size: 0.8rem; padding: 8px; }
-            .explanation-card { padding: 16px; margin-top: 20px; }
+        .notes-panel.active {
+            display: block;
+        }
+
+        .note-block {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: var(--r2);
+            padding: 24px;
+            margin-bottom: 14px;
+        }
+
+        .note-block h3 {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text);
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .note-tag {
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            padding: 3px 8px;
+            border-radius: 100px;
+            background: color-mix(in srgb, var(--aws) 15%, transparent);
+            color: var(--aws);
+        }
+
+        .note-tag.exam {
+            background: color-mix(in srgb, var(--info) 15%, transparent);
+            color: var(--info);
+        }
+
+        .note-tag.trick {
+            background: color-mix(in srgb, #a855f7 15%, transparent);
+            color: #c084fc;
+        }
+
+        .note-list {
+            list-style: none;
+        }
+
+        .note-list li {
+            font-size: 13px;
+            color: var(--text2);
+            padding: 7px 0;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+            line-height: 1.55;
+        }
+
+        .note-list li:last-child {
+            border-bottom: none;
+        }
+
+        .note-list li::before {
+            content: '→';
+            color: var(--text3);
+            flex-shrink: 0;
+            font-size: 11px;
+            margin-top: 2px;
+        }
+
+        .compare-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12px;
+        }
+
+        .compare-table th {
+            text-align: left;
+            padding: 8px 12px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--text3);
+            border-bottom: 1px solid var(--border2);
+        }
+
+        .compare-table td {
+            padding: 10px 12px;
+            border-bottom: 1px solid var(--border);
+            color: var(--text2);
+            vertical-align: top;
+        }
+
+        .compare-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .compare-table td:first-child {
+            color: var(--text);
+            font-weight: 500;
+        }
+
+        .highlight {
+            color: var(--aws);
+            font-weight: 600;
+        }
+
+        /* STRATEGY PAGE */
+        .strat-wrap {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 32px 24px;
+        }
+
+        .strat-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 14px;
+            margin-bottom: 28px;
+        }
+
+        .strat-card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: var(--r2);
+            padding: 20px;
+        }
+
+        .strat-card h4 {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text);
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .strat-num {
+            width: 24px;
+            height: 24px;
+            border-radius: 7px;
+            background: color-mix(in srgb, var(--aws) 15%, transparent);
+            color: var(--aws);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: 700;
+            font-family: 'JetBrains Mono', monospace;
+            flex-shrink: 0;
+        }
+
+        .keyword-pair {
+            display: flex;
+            align-items: center;
+            padding: 7px 0;
+            gap: 8px;
+            border-bottom: 1px solid var(--border);
+            font-size: 12px;
+        }
+
+        .keyword-pair:last-child {
+            border-bottom: none;
+        }
+
+        .kp-word {
+            color: var(--text2);
+            flex: 1;
+        }
+
+        .kp-arrow {
+            color: var(--text3);
+            font-size: 10px;
+        }
+
+        .kp-answer {
+            color: var(--aws);
+            background: color-mix(in srgb, var(--aws) 10%, transparent);
+            padding: 2px 8px;
+            border-radius: 100px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            font-weight: 500;
+        }
+
+        /* NPTEL QUIZ styles (match AWS but with nptel color) */
+        .nptel-theme .q-domain {
+            color: var(--nptel);
+        }
+
+        .nptel-theme .progress-fill {
+            background: var(--nptel);
+        }
+
+        .nptel-theme .score-ring {
+            border-color: var(--nptel);
+            background: color-mix(in srgb, var(--nptel) 8%, transparent);
+        }
+
+        .nptel-theme .score-num {
+            color: var(--nptel);
+        }
+
+        .nptel-theme .btn-primary {
+            background: var(--nptel);
+        }
+
+        .nptel-theme .btn-primary:hover {
+            background: var(--nptel2);
+        }
+
+        /* RESPONSIVE */
+        @media(max-width:600px) {
+            .hero {
+                padding: 40px 16px 32px;
+            }
+
+            .stat-grid,
+            .domains-grid,
+            .ref-grid,
+            .strat-grid {
+                padding: 0 16px;
+            }
+
+            .quiz-wrap,
+            .notes-wrap,
+            .strat-wrap {
+                padding: 24px 16px;
+            }
+
+            .question-card {
+                padding: 20px 16px;
+            }
+
+            .nav-logo {
+                display: none;
+            }
         }
     </style>
 </head>
+
 <body>
+    <div class="noise"></div>
 
-    <div class="quiz-container" id="quiz-container">
-        <div class="batch-selector">
-            <button class="batch-btn active" id="batch-btn-0" onclick="switchBatch(0)">Batch 1</button>
-            <button class="batch-btn" id="batch-btn-1" onclick="switchBatch(1)">Batch 2</button>
+    <nav class="nav">
+        <div class="nav-logo">Study<span>lib</span></div>
+        <div class="nav-tabs">
+            <button class="nav-tab active" onclick="showPage('home')">
+                <span>Overview</span>
+            </button>
+            <button class="nav-tab" onclick="showPage('aws-quiz')">
+                <span>AWS Practice</span>
+            </button>
+            <button class="nav-tab" onclick="showPage('aws-notes')">
+                <span>AWS Notes</span>
+            </button>
+            <button class="nav-tab" onclick="showPage('aws-strategy')">
+                <span>Exam Strategy</span>
+            </button>
+            <button class="nav-tab nptel-tab" onclick="showPage('nptel-quiz')">
+                <span>Data Analytics</span>
+            </button>
         </div>
-        <div class="header">
-            <span class="category-badge" id="category">Category</span>
-            <div class="progress-container">
-                <div class="progress-bar" id="progress-bar"></div>
-            </div>
-            <span id="question-index">1 / 38</span>
-        </div>
+    </nav>
 
-        <div id="quiz-screen">
-            <div class="question-text" id="question">Loading...</div>
-            <div class="options-grid" id="options"></div>
-
-            <div class="explanation-card" id="explanation-card">
-                <div class="explanation-title">Explanation</div>
-                <div id="explanation-text"></div>
-            </div>
-
-            <div class="navigation">
-                <div></div>
-                <button class="btn-next" id="next-btn" disabled>Next Question</button>
+    <!-- HOME PAGE -->
+    <div class="page active" id="page-home">
+        <div class="hero">
+            <div class="hero-eyebrow">Personal Study Hub</div>
+            <h1>Your path to <strong>AWS Certified</strong><br>Cloud Practitioner</h1>
+            <p>Everything in one place — study notes, practice questions, exam strategy, and data analytics. Built just
+                for you.</p>
+            <div class="exam-badge">
+                <div class="badge-dot"></div>
+                CLF-C02 · 65 questions · 90 min · Pass: 700/1000
             </div>
         </div>
 
-        <div class="result-screen" id="result-screen">
-            <h2 id="result-title" style="font-size: 2.2rem; margin-bottom: 10px;">Quiz Complete!</h2>
-            <p>You've navigated through the data galaxy.</p>
-            <div class="score-circle">
-                <span id="final-score">0</span>
-                <span id="total-possible" style="font-size: 1rem; opacity: 0.7;">out of 38</span>
+        <div class="stat-grid">
+            <div class="stat-card">
+                <div class="stat-label">Questions</div>
+                <div class="stat-value">125</div>
+                <div class="stat-sub">AWS practice included</div>
             </div>
-            <p id="performance-msg"></p>
-            <button class="btn-next" onclick="resetCurrentBatch()" style="margin-top: 30px;">Restart Batch</button>
+            <div class="stat-card">
+                <div class="stat-label">Domains</div>
+                <div class="stat-value">4</div>
+                <div class="stat-sub">Cloud · Security · Tech · Billing</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Pass Score</div>
+                <div class="stat-value">70%</div>
+                <div class="stat-sub">700 out of 1000</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Exam Time</div>
+                <div class="stat-value">90m</div>
+                <div class="stat-sub">~1.4 min per question</div>
+            </div>
+        </div>
+
+        <div class="ref-section">
+            <div class="section-title">Domains at a glance</div>
+            <div class="domains-grid">
+                <div class="domain-card" style="--accent:#ff9900" onclick="showPage('aws-quiz')">
+                    <div class="domain-pct">24%</div>
+                    <div class="domain-name">Cloud Concepts</div>
+                    <div class="domain-desc">6 advantages, deployment models, Well-Architected Framework</div>
+                </div>
+                <div class="domain-card" style="--accent:#3b82f6" onclick="showPage('aws-quiz')">
+                    <div class="domain-pct" style="--accent:#3b82f6">30%</div>
+                    <div class="domain-name">Security & Compliance</div>
+                    <div class="domain-desc">Shared Responsibility, IAM, Shield, WAF, GuardDuty</div>
+                </div>
+                <div class="domain-card" style="--accent:#22c55e" onclick="showPage('aws-quiz')">
+                    <div class="domain-pct" style="--accent:#22c55e">34%</div>
+                    <div class="domain-name">Technology & Services</div>
+                    <div class="domain-desc">EC2, S3, RDS, Lambda, CloudFront, VPC and more</div>
+                </div>
+                <div class="domain-card" style="--accent:#a855f7" onclick="showPage('aws-quiz')">
+                    <div class="domain-pct" style="--accent:#a855f7">12%</div>
+                    <div class="domain-name">Billing & Support</div>
+                    <div class="domain-desc">Free Tier, Cost Explorer, Support Plans, TCO</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="ref-section">
+            <div class="section-title">Critical keywords — what words in the question tell you the answer</div>
+            <div class="ref-grid">
+                <div class="ref-card">
+                    <h4>
+                        <div class="ref-icon">$</div>Cost & Pricing keywords
+                    </h4>
+                    <div>
+                        <span class="kw-tag cost">cost-effective</span>
+                        <span class="kw-tag cost">save money</span>
+                        <span class="kw-tag cost">lowest cost</span>
+                        <span class="kw-tag cost">reserved</span>
+                        <span class="kw-tag cost">spot</span>
+                        <span class="kw-tag cost">glacier</span>
+                        <span class="kw-tag cost">CapEx → OpEx</span>
+                    </div>
+                </div>
+                <div class="ref-card">
+                    <h4>
+                        <div class="ref-icon">🔒</div>Security keywords
+                    </h4>
+                    <div>
+                        <span class="kw-tag secure">DDoS</span>
+                        <span class="kw-tag secure">web attacks</span>
+                        <span class="kw-tag secure">threat detection</span>
+                        <span class="kw-tag secure">sensitive data</span>
+                        <span class="kw-tag secure">encryption keys</span>
+                        <span class="kw-tag secure">audit trail</span>
+                        <span class="kw-tag secure">compliance</span>
+                    </div>
+                </div>
+                <div class="ref-card">
+                    <h4>
+                        <div class="ref-icon">λ</div>Serverless keywords
+                    </h4>
+                    <div>
+                        <span class="kw-tag server">no server management</span>
+                        <span class="kw-tag server">least overhead</span>
+                        <span class="kw-tag server">event-driven</span>
+                        <span class="kw-tag server">auto scale</span>
+                        <span class="kw-tag server">pay per use</span>
+                        <span class="kw-tag server">containers no EC2</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- AWS QUIZ PAGE -->
+    <div class="page" id="page-aws-quiz">
+        <div class="quiz-wrap" id="aws-quiz-active">
+            <div class="quiz-controls">
+                <span style="font-size:12px;color:var(--text3);margin-right:4px">Filter:</span>
+                <button class="filter-btn active" onclick="setAWSFilter('all',this)">All domains</button>
+                <button class="filter-btn" onclick="setAWSFilter('Domain 1',this)">Cloud Concepts</button>
+                <button class="filter-btn" onclick="setAWSFilter('Domain 2',this)">Security</button>
+                <button class="filter-btn" onclick="setAWSFilter('Domain 3',this)">Technology</button>
+                <button class="filter-btn" onclick="setAWSFilter('Domain 4',this)">Billing</button>
+            </div>
+
+            <div class="quiz-progress">
+                <div class="progress-track">
+                    <div class="progress-fill" id="aws-prog" style="width:0%"></div>
+                </div>
+                <div class="q-counter" id="aws-counter">1 / 0</div>
+                <div class="q-score-live" id="aws-score-live">0 ✓</div>
+            </div>
+
+            <div class="question-card" id="aws-qcard">
+                <div class="q-domain" id="aws-qdomain">Loading...</div>
+                <div class="q-text" id="aws-qtext"></div>
+                <div class="options-list" id="aws-opts"></div>
+                <div class="explanation" id="aws-expl"></div>
+            </div>
+
+            <div class="quiz-nav">
+                <button class="btn-ghost" onclick="restartAWSQuiz()">↺ Restart</button>
+                <button class="btn-primary" id="aws-next-btn" disabled onclick="nextAWSQ()">Next →</button>
+            </div>
+        </div>
+
+        <div id="aws-result-wrap" style="display:none;">
+            <div class="result-wrap">
+                <div class="score-ring">
+                    <div class="score-num" id="aws-final-score">0</div>
+                    <div class="score-denom" id="aws-final-total">/ 0</div>
+                </div>
+                <div class="result-msg" id="aws-result-msg"></div>
+                <div class="result-sub" id="aws-result-sub"></div>
+                <button class="btn-primary" onclick="restartAWSQuiz()" style="margin:0 auto">↺ Try Again</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- AWS NOTES PAGE -->
+    <div class="page" id="page-aws-notes">
+        <div class="notes-wrap">
+            <div class="notes-tabs">
+                <button class="notes-tab active" onclick="showNote('n-cloud')">Cloud Concepts</button>
+                <button class="notes-tab" onclick="showNote('n-sec')">Security</button>
+                <button class="notes-tab" onclick="showNote('n-tech')">Technology</button>
+                <button class="notes-tab" onclick="showNote('n-billing')">Billing</button>
+                <button class="notes-tab" onclick="showNote('n-compare')">Comparisons</button>
+            </div>
+
+            <div class="notes-panel active" id="n-cloud">
+                <div class="note-block">
+                    <h3>6 Advantages of Cloud Computing <span class="note-tag exam">MEMORIZE</span></h3>
+                    <ul class="note-list">
+                        <li><strong>Trade CapEx for OpEx</strong> — No upfront server purchases, pay monthly</li>
+                        <li><strong>Economies of Scale</strong> — AWS buys in bulk, prices dropped 75+ times</li>
+                        <li><strong>Stop Guessing Capacity</strong> — Auto Scaling handles demand spikes</li>
+                        <li><strong>Increase Speed & Agility</strong> — Deploy in minutes instead of weeks</li>
+                        <li><strong>Stop Spending on Data Centers</strong> — Focus on business, not hardware</li>
+                        <li><strong>Go Global in Minutes</strong> — Deploy in any Region worldwide instantly</li>
+                    </ul>
+                </div>
+                <div class="note-block">
+                    <h3>Cloud Deployment Models</h3>
+                    <ul class="note-list">
+                        <li><strong>Public Cloud</strong> — Everything on AWS. No on-premises. (startups, most
+                            companies)</li>
+                        <li><strong>Private Cloud</strong> — Your own data center, full control. (governments, banks
+                            with strict compliance)</li>
+                        <li><strong>Hybrid Cloud</strong> — Mix of AWS + on-premises connected together. MOST COMMON
+                            exam scenario</li>
+                    </ul>
+                </div>
+                <div class="note-block">
+                    <h3>Service Models <span class="note-tag trick">Common Trap</span></h3>
+                    <ul class="note-list">
+                        <li><strong>IaaS</strong> — You manage OS, apps, data. AWS manages hardware. Example: EC2</li>
+                        <li><strong>PaaS</strong> — You manage app and data only. Example: Elastic Beanstalk, RDS</li>
+                        <li><strong>SaaS</strong> — You manage nothing technical. Example: Gmail, Salesforce, Office 365
+                        </li>
+                        <li>EC2 = IaaS · RDS = PaaS · Gmail = SaaS — know these cold</li>
+                    </ul>
+                </div>
+                <div class="note-block">
+                    <h3>Well-Architected Framework — 6 Pillars</h3>
+                    <ul class="note-list">
+                        <li><strong>Operational Excellence</strong> — Automate operations, IaC, improve processes</li>
+                        <li><strong>Security</strong> — IAM, encryption, detective controls, incident response</li>
+                        <li><strong>Reliability</strong> — Fault tolerance, backup/recovery, handle failures</li>
+                        <li><strong>Performance Efficiency</strong> — Right resource types for the workload</li>
+                        <li><strong>Cost Optimization</strong> — Avoid waste, right pricing model, track spending</li>
+                        <li><strong>Sustainability</strong> (6th pillar, added 2021) — Environmental impact</li>
+                    </ul>
+                </div>
+                <div class="note-block">
+                    <h3>Global Infrastructure</h3>
+                    <ul class="note-list">
+                        <li><strong>Regions</strong> — Separate geographic areas (e.g., us-east-1). Data stays in region
+                            unless you move it</li>
+                        <li><strong>Availability Zones</strong> — 1+ data centers in a Region. Minimum 3 AZs per Region.
+                            Deploy across 2+ for HA</li>
+                        <li><strong>Edge Locations</strong> — CloudFront CDN cache nodes. Hundreds worldwide. Deliver
+                            content with low latency</li>
+                        <li><strong>Local Zones</strong> — AWS infra closer to specific cities for ultra-low latency
+                        </li>
+                        <li><strong>Outposts</strong> — AWS rack in YOUR data center. Hybrid use case</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="notes-panel" id="n-sec">
+                <div class="note-block">
+                    <h3>Shared Responsibility Model <span class="note-tag exam">10+ Questions</span></h3>
+                    <ul class="note-list">
+                        <li><strong>AWS is responsible FOR the Cloud</strong> — Physical security, hardware, hypervisor,
+                            global network, managed service engines (RDS patching)</li>
+                        <li><strong>Customer is responsible IN the Cloud</strong> — Data, IAM users/roles/policies, OS
+                            patches on EC2, encryption configuration, firewall rules</li>
+                        <li>EC2: you patch the OS. RDS: AWS patches the database engine. S3: AWS manages the
+                            infrastructure, you manage permissions and encryption config</li>
+                    </ul>
+                </div>
+                <div class="note-block">
+                    <h3>IAM — Identity & Access Management</h3>
+                    <ul class="note-list">
+                        <li><strong>Users</strong> — Individual person. Long-term credentials (username + password or
+                            access keys)</li>
+                        <li><strong>Groups</strong> — Collection of users with shared permissions. Best practice for
+                            teams</li>
+                        <li><strong>Roles</strong> — Temporary credentials for services or cross-account access. EC2 →
+                            S3 = use a Role</li>
+                        <li><strong>Policies</strong> — JSON documents that define Allow/Deny for actions on resources
+                        </li>
+                        <li>New IAM users start with ZERO permissions — must explicitly grant everything</li>
+                        <li>Root account: enable MFA, never use for daily tasks, never share</li>
+                        <li>Principle of Least Privilege — give only what is needed and nothing more</li>
+                    </ul>
+                </div>
+                <div class="note-block">
+                    <h3>Security Services Quick Reference</h3>
+                    <ul class="note-list">
+                        <li><strong>Shield Standard</strong> — FREE, automatic, protects all AWS customers from Layer
+                            3/4 DDoS</li>
+                        <li><strong>Shield Advanced</strong> — Paid, DDoS Response Team access, financial protection
+                        </li>
+                        <li><strong>WAF</strong> — Blocks SQL injection, XSS, bad bots. Works at Layer 7 (HTTP/HTTPS)
+                        </li>
+                        <li><strong>GuardDuty</strong> — ML-based threat detection. Analyzes CloudTrail, VPC Flow Logs,
+                            DNS logs</li>
+                        <li><strong>Inspector</strong> — Scans EC2 and containers for software vulnerabilities</li>
+                        <li><strong>Macie</strong> — Finds PII and sensitive data in S3 using machine learning</li>
+                        <li><strong>KMS</strong> — Managed encryption key service. Used with S3, EBS, RDS etc.</li>
+                        <li><strong>CloudTrail</strong> — Logs every API call. Who did what, when, from where</li>
+                        <li><strong>Config</strong> — Records resource configuration changes over time</li>
+                        <li><strong>Security Hub</strong> — Central dashboard aggregating findings from all security
+                            services</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="notes-panel" id="n-tech">
+                <div class="note-block">
+                    <h3>EC2 Pricing Models <span class="note-tag exam">5-7 Questions</span></h3>
+                    <ul class="note-list">
+                        <li><strong>On-Demand</strong> — Pay by hour/second. No commitment. Most flexible, most
+                            expensive. Use for: unknown workloads, new apps</li>
+                        <li><strong>Reserved</strong> — 1 or 3 year commit. Up to 72% discount. Use for: predictable,
+                            steady-state 24/7 workloads</li>
+                        <li><strong>Spot</strong> — Up to 90% discount using spare capacity. Can be interrupted with
+                            2-min notice. Use for: batch jobs, fault-tolerant tasks</li>
+                        <li><strong>Dedicated Host</strong> — Physical server just for you. For compliance/BYOL
+                            licensing. Most expensive</li>
+                        <li><strong>Savings Plans</strong> — More flexible than RIs. Commit to $/hour usage across any
+                            instance type/Region/service</li>
+                    </ul>
+                </div>
+                <div class="note-block">
+                    <h3>S3 Storage Classes <span class="note-tag exam">5-7 Questions</span></h3>
+                    <ul class="note-list">
+                        <li><strong>S3 Standard</strong> — Frequently accessed data. Highest cost, highest performance
+                        </li>
+                        <li><strong>S3 Standard-IA</strong> — Infrequent access, multi-AZ, retrieval fee. Backup copies,
+                            disaster recovery</li>
+                        <li><strong>S3 One Zone-IA</strong> — Single AZ only, 20% cheaper than Standard-IA. Data that
+                            can be recreated</li>
+                        <li><strong>S3 Intelligent-Tiering</strong> — Auto-moves between tiers based on access patterns.
+                            Unpredictable access</li>
+                        <li><strong>S3 Glacier Flexible</strong> — Archive, minutes-to-hours retrieval. Regulatory
+                            archives</li>
+                        <li><strong>S3 Glacier Deep Archive</strong> — Lowest cost, 12+ hour retrieval. Long-term
+                            compliance archives</li>
+                        <li>S3 durability: 11 nines (99.999999999%) for all classes except One Zone-IA</li>
+                    </ul>
+                </div>
+                <div class="note-block">
+                    <h3>Database Selection Guide</h3>
+                    <ul class="note-list">
+                        <li><strong>RDS</strong> — Managed relational DB. MySQL, PostgreSQL, Oracle, SQL Server, MariaDB
+                        </li>
+                        <li><strong>Aurora</strong> — AWS's own MySQL/PostgreSQL-compatible DB. 5x faster than MySQL
+                        </li>
+                        <li><strong>DynamoDB</strong> — Serverless NoSQL. Single-digit millisecond performance. Any
+                            scale</li>
+                        <li><strong>Redshift</strong> — Data warehouse for analytics (OLAP). Petabyte scale</li>
+                        <li><strong>ElastiCache</strong> — In-memory cache. Redis or Memcached. Speed up database reads
+                        </li>
+                        <li><strong>Neptune</strong> — Graph database for relationships (social networks, fraud
+                            detection)</li>
+                    </ul>
+                </div>
+                <div class="note-block">
+                    <h3>Compute Services</h3>
+                    <ul class="note-list">
+                        <li><strong>EC2</strong> — Virtual machines. You control the OS. IaaS</li>
+                        <li><strong>Lambda</strong> — Serverless functions. Event-driven. Max 15 min timeout. Always
+                            Free: 1M req/month</li>
+                        <li><strong>ECS</strong> — Managed Docker container orchestration</li>
+                        <li><strong>EKS</strong> — Managed Kubernetes service</li>
+                        <li><strong>Fargate</strong> — Serverless container engine. No EC2 to manage. Works with ECS and
+                            EKS</li>
+                        <li><strong>Elastic Beanstalk</strong> — PaaS. Upload code, it handles everything else</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="notes-panel" id="n-billing">
+                <div class="note-block">
+                    <h3>Free Tier Types <span class="note-tag exam">Know All Three</span></h3>
+                    <ul class="note-list">
+                        <li><strong>12-Month Free Tier</strong> — Available for 12 months from account creation. EC2
+                            t2.micro 750hrs/month, S3 5GB, RDS 750hrs</li>
+                        <li><strong>Always Free</strong> — Never expires. Lambda 1M requests/month, DynamoDB 25GB,
+                            CloudFront 1TB/month</li>
+                        <li><strong>Free Trials</strong> — Service-specific short-term trial. Starts from first use, not
+                            account creation</li>
+                    </ul>
+                </div>
+                <div class="note-block">
+                    <h3>Support Plans <span class="note-tag exam">3-5 Questions</span></h3>
+                    <table class="compare-table">
+                        <tr>
+                            <th>Plan</th>
+                            <th>Cost</th>
+                            <th>Critical System Response</th>
+                            <th>Key Feature</th>
+                        </tr>
+                        <tr>
+                            <td>Basic</td>
+                            <td>Free</td>
+                            <td>No tech support</td>
+                            <td>7 Trusted Advisor checks</td>
+                        </tr>
+                        <tr>
+                            <td>Developer</td>
+                            <td>$29+/mo</td>
+                            <td>—</td>
+                            <td>Email, business hours only</td>
+                        </tr>
+                        <tr>
+                            <td>Business</td>
+                            <td>$100+/mo</td>
+                            <td class="highlight">&lt; 1 hour</td>
+                            <td>24/7 phone, full Trusted Advisor</td>
+                        </tr>
+                        <tr>
+                            <td>Enterprise</td>
+                            <td>$15k+/mo</td>
+                            <td class="highlight">&lt; 15 minutes</td>
+                            <td>TAM (Technical Account Manager)</td>
+                        </tr>
+                    </table>
+                </div>
+                <div class="note-block">
+                    <h3>Billing Tools</h3>
+                    <ul class="note-list">
+                        <li><strong>Pricing Calculator</strong> — Estimate costs BEFORE deploying. No account needed
+                        </li>
+                        <li><strong>Cost Explorer</strong> — Visualize and analyze PAST costs. Identify trends</li>
+                        <li><strong>Budgets</strong> — Set alerts for when spending exceeds threshold. Can trigger
+                            auto-actions</li>
+                        <li><strong>Cost & Usage Report</strong> — Most granular data. Line-item detail, export to S3
+                        </li>
+                        <li><strong>Trusted Advisor</strong> — Recommendations across 5 categories: Cost, Performance,
+                            Security, Fault Tolerance, Service Limits</li>
+                        <li><strong>Consolidated Billing</strong> — One bill for all accounts in AWS Organizations.
+                            Share Reserved Instance discounts</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="notes-panel" id="n-compare">
+                <div class="note-block">
+                    <h3>Services People Confuse <span class="note-tag trick">Exam Traps</span></h3>
+                    <table class="compare-table">
+                        <tr>
+                            <th>Service A</th>
+                            <th>Service B</th>
+                            <th>Key Difference</th>
+                        </tr>
+                        <tr>
+                            <td>CloudWatch</td>
+                            <td>CloudTrail</td>
+                            <td>CloudWatch = performance metrics/alarms. CloudTrail = API audit log (who did what)</td>
+                        </tr>
+                        <tr>
+                            <td>Security Group</td>
+                            <td>NACL</td>
+                            <td>SG = stateful, instance-level. NACL = stateless, subnet-level</td>
+                        </tr>
+                        <tr>
+                            <td>IAM Role</td>
+                            <td>IAM User</td>
+                            <td>Role = temporary credentials for services. User = permanent credentials for humans</td>
+                        </tr>
+                        <tr>
+                            <td>S3</td>
+                            <td>EBS</td>
+                            <td>S3 = object storage (files, images). EBS = block storage (like a hard drive attached to
+                                EC2)</td>
+                        </tr>
+                        <tr>
+                            <td>EBS</td>
+                            <td>EFS</td>
+                            <td>EBS = attached to 1 EC2 instance. EFS = shared file system, multiple instances
+                                simultaneously</td>
+                        </tr>
+                        <tr>
+                            <td>GuardDuty</td>
+                            <td>Inspector</td>
+                            <td>GuardDuty = threat detection (behavioral). Inspector = vulnerability scanning (CVEs)
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>SNS</td>
+                            <td>SQS</td>
+                            <td>SNS = pub/sub fan-out to multiple subscribers. SQS = queue, one-to-one reliable delivery
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Direct Connect</td>
+                            <td>VPN</td>
+                            <td>Direct Connect = physical dedicated line, consistent speed. VPN = encrypted tunnel over
+                                internet</td>
+                        </tr>
+                        <tr>
+                            <td>Shield Standard</td>
+                            <td>Shield Advanced</td>
+                            <td>Standard = free, automatic. Advanced = paid, DDoS Response Team, financial protection
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Reserved Instance</td>
+                            <td>Savings Plans</td>
+                            <td>RI = locked to instance type/Region. Savings Plans = flexible, commit to $/hr usage</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- EXAM STRATEGY PAGE -->
+    <div class="page" id="page-aws-strategy">
+        <div class="strat-wrap">
+            <div style="margin-bottom:28px">
+                <div class="section-title">Exam day strategy</div>
+                <p style="font-size:14px;color:var(--text2);max-width:600px">The CLF-C02 exam is about pattern
+                    recognition. Learn these keyword-to-answer mappings and you'll handle most questions through
+                    elimination.</p>
+            </div>
+
+            <div class="strat-grid">
+                <div class="strat-card">
+                    <h4>
+                        <div class="strat-num">1</div>Keywords → Answers
+                    </h4>
+                    <div class="keyword-pair"><span class="kp-word">cost-effective, save money</span><span
+                            class="kp-arrow">→</span><span class="kp-answer">Spot / S3-IA / Reserved</span></div>
+                    <div class="keyword-pair"><span class="kp-word">serverless</span><span
+                            class="kp-arrow">→</span><span class="kp-answer">Lambda / Fargate / DynamoDB</span></div>
+                    <div class="keyword-pair"><span class="kp-word">high availability</span><span
+                            class="kp-arrow">→</span><span class="kp-answer">Multi-AZ / Auto Scaling / ELB</span></div>
+                    <div class="keyword-pair"><span class="kp-word">real-time processing</span><span
+                            class="kp-arrow">→</span><span class="kp-answer">Kinesis / Lambda</span></div>
+                    <div class="keyword-pair"><span class="kp-word">DDoS protection</span><span
+                            class="kp-arrow">→</span><span class="kp-answer">Shield (Standard=free)</span></div>
+                    <div class="keyword-pair"><span class="kp-word">web app attacks</span><span
+                            class="kp-arrow">→</span><span class="kp-answer">AWS WAF</span></div>
+                    <div class="keyword-pair"><span class="kp-word">audit / who did what</span><span
+                            class="kp-arrow">→</span><span class="kp-answer">CloudTrail</span></div>
+                    <div class="keyword-pair"><span class="kp-word">compliance reports</span><span
+                            class="kp-arrow">→</span><span class="kp-answer">AWS Artifact</span></div>
+                    <div class="keyword-pair"><span class="kp-word">least overhead</span><span
+                            class="kp-arrow">→</span><span class="kp-answer">Managed / serverless option</span></div>
+                    <div class="keyword-pair"><span class="kp-word">move petabytes</span><span
+                            class="kp-arrow">→</span><span class="kp-answer">Snowball / Snowmobile</span></div>
+                </div>
+
+                <div class="strat-card">
+                    <h4>
+                        <div class="strat-num">2</div>Elimination rules
+                    </h4>
+                    <ul class="note-list">
+                        <li>If question mentions "no server management" → eliminate EC2 options</li>
+                        <li>If "relational database" → eliminate DynamoDB (it's NoSQL)</li>
+                        <li>If "SQL / transactions" → it's RDS or Aurora, not DynamoDB</li>
+                        <li>If "physical data" transfer → Snowball/Snowmobile, not DataSync</li>
+                        <li>If "free" DDoS protection → Shield Standard (not Advanced)</li>
+                        <li>If "TAM" or "15-minute response" → Enterprise support only</li>
+                        <li>Watch for NOT/EXCEPT/LEAST in bold — they flip the question</li>
+                        <li>Two answers look similar → pick the more specific/appropriate one</li>
+                    </ul>
+                </div>
+
+                <div class="strat-card">
+                    <h4>
+                        <div class="strat-num">3</div>Time management
+                    </h4>
+                    <ul class="note-list">
+                        <li>90 minutes ÷ 65 questions = ~1.4 min each</li>
+                        <li>Read every word of every question first</li>
+                        <li>Flag and skip if unsure — come back at end</li>
+                        <li>Don't spend more than 2 minutes on one question</li>
+                        <li>15 questions are unscored — don't panic on hard ones</li>
+                        <li>No penalty for wrong answers — always guess</li>
+                        <li>Review flagged questions if time allows</li>
+                        <li>Aim to finish first pass in 70 minutes</li>
+                    </ul>
+                </div>
+
+                <div class="strat-card">
+                    <h4>
+                        <div class="strat-num">4</div>Day-before checklist
+                    </h4>
+                    <ul class="note-list">
+                        <li>Memorize support plan response times</li>
+                        <li>Review S3 storage classes and when to use each</li>
+                        <li>Review EC2 pricing models (On-Demand vs Reserved vs Spot)</li>
+                        <li>Know Shared Responsibility Model cold</li>
+                        <li>Review IAM: users vs groups vs roles</li>
+                        <li>Know which security service does what</li>
+                        <li>Know the 3 Free Tier types</li>
+                        <li>Get 8 hours sleep — seriously</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="ref-section" style="padding:0">
+                <div class="section-title" style="margin-top:8px">High-frequency topics (appear most on exam)</div>
+                <div class="ref-grid">
+                    <div class="ref-card">
+                        <h4>By frequency</h4>
+                        <table class="ref-table">
+                            <tr>
+                                <td>Shared Responsibility Model</td>
+                                <td>10+ questions</td>
+                            </tr>
+                            <tr>
+                                <td>Security services</td>
+                                <td>8-10 questions</td>
+                            </tr>
+                            <tr>
+                                <td>IAM best practices</td>
+                                <td>5-8 questions</td>
+                            </tr>
+                            <tr>
+                                <td>EC2 pricing models</td>
+                                <td>5-7 questions</td>
+                            </tr>
+                            <tr>
+                                <td>S3 storage classes</td>
+                                <td>5-7 questions</td>
+                            </tr>
+                            <tr>
+                                <td>Database selection</td>
+                                <td>5-7 questions</td>
+                            </tr>
+                            <tr>
+                                <td>AWS Support plans</td>
+                                <td>3-5 questions</td>
+                            </tr>
+                        </table>
+                    </div>
+                    <div class="ref-card">
+                        <h4>Must-know numbers</h4>
+                        <table class="ref-table">
+                            <tr>
+                                <td>Lambda max timeout</td>
+                                <td>15 minutes</td>
+                            </tr>
+                            <tr>
+                                <td>S3 max object size</td>
+                                <td>5 TB</td>
+                            </tr>
+                            <tr>
+                                <td>S3 durability</td>
+                                <td>11 nines</td>
+                            </tr>
+                            <tr>
+                                <td>EC2 Free Tier</td>
+                                <td>750 hrs/month, 12 months</td>
+                            </tr>
+                            <tr>
+                                <td>Lambda Always Free</td>
+                                <td>1M req/month</td>
+                            </tr>
+                            <tr>
+                                <td>Enterprise response time</td>
+                                <td>&lt; 15 minutes</td>
+                            </tr>
+                            <tr>
+                                <td>Business response time</td>
+                                <td>&lt; 1 hour</td>
+                            </tr>
+                            <tr>
+                                <td>Min AZs per Region</td>
+                                <td>3</td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- NPTEL QUIZ PAGE -->
+    <div class="page nptel-theme" id="page-nptel-quiz">
+        <div class="quiz-wrap" id="nptel-quiz-active">
+            <div class="quiz-controls">
+                <span style="font-size:12px;color:var(--text3);margin-right:4px">Batch:</span>
+                <button class="filter-btn active nptel" onclick="setNPTELBatch(0,this)">Batch 1 (38 Q)</button>
+                <button class="filter-btn" onclick="setNPTELBatch(1,this)">Batch 2 (48 Q)</button>
+            </div>
+
+            <div class="quiz-progress">
+                <div class="progress-track">
+                    <div class="progress-fill" id="np-prog" style="width:0%;background:var(--nptel)"></div>
+                </div>
+                <div class="q-counter" id="np-counter">1 / 0</div>
+                <div class="q-score-live" id="np-score-live" style="color:var(--nptel)">0 ✓</div>
+            </div>
+
+            <div class="question-card" id="np-qcard">
+                <div class="q-domain" id="np-qdomain" style="color:var(--nptel)">Loading...</div>
+                <div class="q-text" id="np-qtext"></div>
+                <div class="options-list" id="np-opts"></div>
+                <div class="explanation" id="np-expl"></div>
+            </div>
+
+            <div class="quiz-nav">
+                <button class="btn-ghost" onclick="restartNPTEL()">↺ Restart</button>
+                <button class="btn-primary" id="np-next-btn" disabled onclick="nextNPQ()"
+                    style="background:var(--nptel)">Next →</button>
+            </div>
+        </div>
+
+        <div id="np-result-wrap" style="display:none;">
+            <div class="result-wrap">
+                <div class="score-ring"
+                    style="border-color:var(--nptel);background:color-mix(in srgb,var(--nptel) 8%,transparent)">
+                    <div class="score-num" id="np-final-score" style="color:var(--nptel)">0</div>
+                    <div class="score-denom" id="np-final-total">/ 0</div>
+                </div>
+                <div class="result-msg" id="np-result-msg"></div>
+                <div class="result-sub" id="np-result-sub"></div>
+                <button class="btn-primary" onclick="restartNPTEL()" style="margin:0 auto;background:var(--nptel)">↺ Try
+                    Again</button>
+            </div>
         </div>
     </div>
 
     <script>
-        const batches = [
+        // ─── NAVIGATION ───────────────────────────────────────────────────────────────
+        const pages = ['home', 'aws-quiz', 'aws-notes', 'aws-strategy', 'nptel-quiz'];
+
+        function showPage(id) {
+            pages.forEach(p => {
+                document.getElementById('page-' + p).classList.toggle('active', p === id);
+            });
+            document.querySelectorAll('.nav-tab').forEach((t, i) => {
+                t.classList.toggle('active', pages[i] === id);
+            });
+            window.scrollTo(0, 0);
+        }
+
+        // ─── NOTES ────────────────────────────────────────────────────────────────────
+        function showNote(id) {
+            document.querySelectorAll('.notes-panel').forEach(p => p.classList.remove('active'));
+            document.querySelectorAll('.notes-tab').forEach(t => t.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        // ─── AWS QUIZ ─────────────────────────────────────────────────────────────────
+        const AWS_Q = [
+            { domain: "Domain 1: Cloud Concepts", q: "Which of the following is NOT one of the six advantages of cloud computing?", opts: ["Trade capital expense for variable expense", "Benefit from massive economies of scale", "Eliminate all security responsibilities", "Go global in minutes"], a: 2, exp: "You still have security responsibilities under the Shared Responsibility Model. AWS handles physical security; you handle your data, IAM, and configurations." },
+            { domain: "Domain 1: Cloud Concepts", q: "A company wants to move from purchasing servers to paying only for compute they use. Which model does this represent?", opts: ["Infrastructure as a Service", "Platform as a Service", "Software as a Service", "Pay-as-you-go pricing"], a: 3, exp: "Pay-as-you-go means you only pay for actual resource consumption — no upfront purchase of hardware." },
+            { domain: "Domain 1: Cloud Concepts", q: "Which Well-Architected Framework pillar focuses on the ability to recover from failures and meet demand?", opts: ["Operational Excellence", "Security", "Reliability", "Performance Efficiency"], a: 2, exp: "Reliability covers the ability of a workload to perform its intended function correctly and consistently, including recovery from failures." },
+            { domain: "Domain 1: Cloud Concepts", q: "A company is migrating with minimal changes to code. Which migration strategy is this?", opts: ["Rehost (Lift and Shift)", "Refactor", "Repurchase", "Retire"], a: 0, exp: "Rehost (Lift and Shift) moves applications to AWS as-is with minimal or no code changes." },
+            { domain: "Domain 1: Cloud Concepts", q: "How many Availability Zones does each AWS Region have at minimum?", opts: ["1", "2", "3", "4"], a: 2, exp: "Every AWS Region has a minimum of 3 Availability Zones, each being one or more discrete data centers." },
+            { domain: "Domain 1: Cloud Concepts", q: "Which cloud advantage is demonstrated when a developer spins up a test server in minutes instead of waiting weeks for procurement?", opts: ["Economies of Scale", "Durability", "Agility", "High Availability"], a: 2, exp: "Cloud agility means you can rapidly experiment and iterate — reducing time to try new ideas from weeks to minutes." },
+            { domain: "Domain 1: Cloud Concepts", q: "A company connects their on-premises data center to AWS VPC while keeping sensitive data on-premises. This is an example of:", opts: ["Public Cloud", "Private Cloud", "Hybrid Cloud", "Multi-Cloud"], a: 2, exp: "Hybrid cloud connects on-premises infrastructure (private) to cloud resources (public), allowing data and applications to be shared between them." },
+            { domain: "Domain 1: Cloud Concepts", q: "Which term describes the ability to automatically add or remove resources based on demand?", opts: ["Durability", "Fault Tolerance", "Elasticity", "High Availability"], a: 2, exp: "Elasticity is the cloud's ability to automatically scale resources up during demand spikes and back down when demand drops." },
+            { domain: "Domain 2: Security and Compliance", q: "According to the Shared Responsibility Model, who is responsible for patching the OS on Amazon EC2 instances?", opts: ["AWS", "Customer", "Both", "Third-party vendor"], a: 1, exp: "EC2 is IaaS — the customer is responsible for managing and patching the guest operating system. AWS manages the physical hardware." },
+            { domain: "Domain 2: Security and Compliance", q: "Which IAM entity should be used to give an EC2 instance permissions to access S3?", opts: ["IAM User", "IAM Group", "IAM Role", "Access Keys"], a: 2, exp: "IAM Roles provide temporary, automatically-rotated credentials to EC2 instances — never embed long-term access keys in instances." },
+            { domain: "Domain 2: Security and Compliance", q: "Which AWS service provides DDoS protection at no additional cost for all customers?", opts: ["AWS WAF", "AWS Shield Standard", "AWS Shield Advanced", "Amazon GuardDuty"], a: 1, exp: "AWS Shield Standard is automatically included for all AWS customers at no cost, protecting against common Layer 3 and Layer 4 DDoS attacks." },
+            { domain: "Domain 2: Security and Compliance", q: "A company wants to monitor for threats by analyzing CloudTrail and VPC Flow Logs. Which service should they use?", opts: ["AWS Shield", "Amazon Inspector", "Amazon GuardDuty", "AWS WAF"], a: 2, exp: "Amazon GuardDuty is a threat detection service that analyzes CloudTrail logs, VPC Flow Logs, and DNS logs to identify malicious activity." },
+            { domain: "Domain 2: Security and Compliance", q: "Which service is used to store and automatically rotate database passwords and API keys?", opts: ["AWS KMS", "IAM Roles", "AWS Secrets Manager", "AWS Systems Manager"], a: 2, exp: "AWS Secrets Manager stores, manages, and rotates secrets (like database credentials) automatically, eliminating hardcoded credentials." },
+            { domain: "Domain 2: Security and Compliance", q: "Which AWS service records every API call made in your account for auditing purposes?", opts: ["Amazon CloudWatch", "AWS CloudTrail", "AWS Config", "Amazon GuardDuty"], a: 1, exp: "AWS CloudTrail logs every API call — who made the request, from which IP, at what time, and whether it succeeded." },
+            { domain: "Domain 2: Security and Compliance", q: "What is the recommended best practice for the AWS root account?", opts: ["Use it for daily admin tasks", "Share it with trusted team members", "Enable MFA and avoid using it for routine tasks", "Delete it after setup"], a: 2, exp: "The root account has unrestricted access. Enable MFA on it, never share it, and use it only for the few tasks that require root access." },
+            { domain: "Domain 2: Security and Compliance", q: "By default, when a new IAM user is created, they have:", opts: ["Full administrator access", "Read-only access to all services", "No permissions at all", "Access to billing only"], a: 2, exp: "New IAM users have zero permissions by default — all permissions must be explicitly granted, supporting the principle of least privilege." },
+            { domain: "Domain 2: Security and Compliance", q: "Which AWS service scans EC2 instances and container images for software vulnerabilities?", opts: ["Amazon GuardDuty", "Amazon Macie", "Amazon Inspector", "AWS Config"], a: 2, exp: "Amazon Inspector automatically scans EC2 instances, Lambda functions, and container images for known software vulnerabilities (CVEs)." },
+            { domain: "Domain 2: Security and Compliance", q: "Where can customers download AWS compliance reports and certifications (SOC 2, PCI DSS, ISO)?", opts: ["AWS Trusted Advisor", "AWS Cost Explorer", "AWS Artifact", "AWS Security Hub"], a: 2, exp: "AWS Artifact is a self-service portal providing on-demand access to AWS compliance reports, certifications, and agreements." },
+            { domain: "Domain 2: Security and Compliance", q: "Which service discovers and classifies sensitive data (like PII) stored in Amazon S3?", opts: ["Amazon GuardDuty", "Amazon Inspector", "AWS Config", "Amazon Macie"], a: 3, exp: "Amazon Macie uses machine learning to automatically identify sensitive data like PII, financial information, and credentials stored in S3." },
+            { domain: "Domain 2: Security and Compliance", q: "Which feature of AWS Organizations can prevent member accounts from disabling CloudTrail?", opts: ["IAM Permission Boundaries", "Service Control Policies (SCPs)", "AWS Config Rules", "CloudWatch Alarms"], a: 1, exp: "Service Control Policies (SCPs) define the maximum permissions for member accounts, preventing specific actions regardless of IAM permissions within those accounts." },
+            { domain: "Domain 3: Cloud Technology and Services", q: "Which EC2 pricing model offers up to 90% discount but can be interrupted with 2-minute notice?", opts: ["Reserved Instances", "On-Demand Instances", "Spot Instances", "Dedicated Hosts"], a: 2, exp: "Spot Instances use unused EC2 capacity at up to 90% discount — perfect for fault-tolerant batch jobs, but AWS can reclaim them with 2-minute warning." },
+            { domain: "Domain 3: Cloud Technology and Services", q: "A company has a steady-state production workload running 24/7. Which pricing model provides the most savings?", opts: ["On-Demand", "Spot", "Reserved Instances", "Savings Plans only"], a: 2, exp: "Reserved Instances offer up to 72% discount for 1- or 3-year commitments — ideal for predictable, always-on workloads." },
+            { domain: "Domain 3: Cloud Technology and Services", q: "Which S3 storage class is designed for data that is accessed less than once per month and must be highly available?", opts: ["S3 Standard", "S3 Standard-IA", "S3 One Zone-IA", "S3 Intelligent-Tiering"], a: 1, exp: "S3 Standard-IA (Infrequent Access) is designed for data accessed less frequently but still requires immediate access when needed — stored across multiple AZs." },
+            { domain: "Domain 3: Cloud Technology and Services", q: "Which S3 storage class stores data in only ONE Availability Zone and has the lowest availability?", opts: ["S3 Standard-IA", "S3 One Zone-IA", "S3 Glacier", "S3 Intelligent-Tiering"], a: 1, exp: "S3 One Zone-IA stores data in a single AZ — if that AZ fails, the data is lost. It's 20% cheaper than Standard-IA, suitable for recreatable data." },
+            { domain: "Domain 3: Cloud Technology and Services", q: "A company wants to run serverless functions that execute in response to S3 upload events. Which service should they use?", opts: ["Amazon EC2", "Amazon ECS", "AWS Lambda", "AWS Fargate"], a: 2, exp: "AWS Lambda is the serverless compute service that runs code in response to events (like S3 uploads) without requiring server provisioning." },
+            { domain: "Domain 3: Cloud Technology and Services", q: "What is the maximum execution timeout for AWS Lambda?", opts: ["5 minutes", "10 minutes", "15 minutes", "30 minutes"], a: 2, exp: "Lambda functions have a maximum execution timeout of 15 minutes (900 seconds). For longer workloads, use EC2, ECS, or Step Functions." },
+            { domain: "Domain 3: Cloud Technology and Services", q: "Which service is a fully managed NoSQL database with single-digit millisecond performance at any scale?", opts: ["Amazon RDS", "Amazon Aurora", "Amazon DynamoDB", "Amazon Redshift"], a: 2, exp: "Amazon DynamoDB is a serverless, fully managed NoSQL (key-value and document) database delivering consistent single-digit millisecond performance." },
+            { domain: "Domain 3: Cloud Technology and Services", q: "Which service would you use to run a data warehouse and execute complex analytical queries on petabytes of data?", opts: ["Amazon RDS", "Amazon DynamoDB", "Amazon Redshift", "Amazon Aurora"], a: 2, exp: "Amazon Redshift is purpose-built for Online Analytical Processing (OLAP) — it's AWS's managed data warehouse for petabyte-scale analytics." },
+            { domain: "Domain 3: Cloud Technology and Services", q: "A company needs to run Docker containers without managing the underlying EC2 instances. Which combination should they use?", opts: ["Amazon ECS on EC2", "Amazon ECS with Fargate", "Amazon EC2 with Docker installed", "Amazon EKS on EC2"], a: 1, exp: "AWS Fargate is a serverless compute engine for containers — you define the container, and Fargate manages all the underlying infrastructure." },
+            { domain: "Domain 3: Cloud Technology and Services", q: "Which service provides a global Content Delivery Network (CDN) to serve content with low latency?", opts: ["Amazon Route 53", "Amazon CloudFront", "AWS Direct Connect", "AWS Global Accelerator"], a: 1, exp: "Amazon CloudFront is a CDN that caches content at Edge Locations worldwide, serving it from the location nearest to the end user." },
+            { domain: "Domain 3: Cloud Technology and Services", q: "Which service would you use to transfer 100 TB of data to AWS when internet bandwidth is too slow?", opts: ["AWS DataSync", "AWS Snowball", "AWS Transfer Family", "S3 Transfer Acceleration"], a: 1, exp: "AWS Snowball is a physical data transfer device for large migrations — AWS ships you a physical device, you load data, then ship it back." },
+            { domain: "Domain 3: Cloud Technology and Services", q: "What is the maximum size of a single Amazon S3 object?", opts: ["5 GB", "1 TB", "5 TB", "50 TB"], a: 2, exp: "A single S3 object can be up to 5 TB in size. Objects larger than 5 GB should use Multipart Upload." },
+            { domain: "Domain 3: Cloud Technology and Services", q: "Which type of Elastic Load Balancer operates at Layer 7 and supports path-based and host-based routing?", opts: ["Classic Load Balancer", "Network Load Balancer", "Application Load Balancer", "Gateway Load Balancer"], a: 2, exp: "Application Load Balancer (ALB) operates at Layer 7 (HTTP/HTTPS), understanding web traffic and enabling advanced routing rules." },
+            { domain: "Domain 4: Billing, Pricing, and Support", q: "Which type of AWS Free Tier offering never expires and is available to all customers indefinitely?", opts: ["12-Month Free Tier", "Free Trials", "Always Free", "Pay-as-you-go"], a: 2, exp: "Always Free offerings (like Lambda's 1M requests/month and DynamoDB's 25 GB) never expire, available to all customers permanently." },
+            { domain: "Domain 4: Billing, Pricing, and Support", q: "Which tool helps you estimate the cost of your planned AWS architecture before deploying?", opts: ["AWS Cost Explorer", "AWS Budgets", "AWS Pricing Calculator", "AWS Trusted Advisor"], a: 2, exp: "AWS Pricing Calculator (calculator.aws) lets you model architecture and estimate monthly costs before deploying anything." },
+            { domain: "Domain 4: Billing, Pricing, and Support", q: "Which AWS Support plan provides 24/7 phone access to Cloud Support Engineers?", opts: ["Basic", "Developer", "Business", "Both Business and Enterprise"], a: 3, exp: "Both Business and Enterprise support plans include 24/7 phone access to Cloud Support Engineers. Developer is email-only during business hours." },
+            { domain: "Domain 4: Billing, Pricing, and Support", q: "What is the response time for a critical production system down issue under AWS Enterprise Support?", opts: ["4 hours", "1 hour", "30 minutes", "< 15 minutes"], a: 3, exp: "AWS Enterprise Support guarantees a response time of less than 15 minutes for business-critical system down cases — the fastest available." },
+            { domain: "Domain 4: Billing, Pricing, and Support", q: "Which AWS Organizations feature allows a company to receive one combined bill for all member accounts?", opts: ["Service Control Policies", "Consolidated Billing", "Organizational Units", "Multi-Account Management"], a: 1, exp: "Consolidated Billing combines billing for all accounts in an AWS Organization into a single invoice, with potential volume discount benefits." },
+            { domain: "Domain 4: Billing, Pricing, and Support", q: "Which tool lets you set alerts when your AWS costs are forecasted to exceed a defined amount?", opts: ["AWS Cost Explorer", "AWS Pricing Calculator", "AWS Budgets", "AWS Cost and Usage Report"], a: 2, exp: "AWS Budgets lets you set custom cost and usage thresholds and receive alerts when actual or forecasted costs approach or exceed those limits." },
+            { domain: "Domain 4: Billing, Pricing, and Support", q: "Which service provides recommendations for cost optimization, security, and performance improvements in your account?", opts: ["AWS Cost Explorer", "AWS Config", "AWS Trusted Advisor", "AWS CloudWatch"], a: 2, exp: "AWS Trusted Advisor analyzes your account and provides recommendations across 5 categories: Cost, Performance, Security, Fault Tolerance, and Service Limits." },
+            { domain: "Domain 4: Billing, Pricing, and Support", q: "A company wants to track and allocate AWS costs by individual projects or departments. What should they use?", opts: ["Consolidated Billing", "AWS Budgets", "Cost Allocation Tags", "AWS Cost Explorer filters"], a: 2, exp: "Cost Allocation Tags let you assign metadata (like project or department) to resources, then break down costs by those tags in billing reports." },
+        ];
+
+        let awsFilter = 'all';
+        let awsFiltered = [...AWS_Q];
+        let awsIdx = 0;
+        let awsScore = 0;
+        let awsAnswered = false;
+
+        function shuffleArray(arr) {
+            const a = [...arr];
+            for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1));[a[i], a[j]] = [a[j], a[i]]; }
+            return a;
+        }
+
+        function setAWSFilter(f, btn) {
+            awsFilter = f;
+            document.querySelectorAll('#page-aws-quiz .filter-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            awsFiltered = f === 'all' ? shuffleArray([...AWS_Q]) : shuffleArray(AWS_Q.filter(q => q.domain.includes(f)));
+            awsIdx = 0; awsScore = 0; awsAnswered = false;
+            document.getElementById('aws-result-wrap').style.display = 'none';
+            document.getElementById('aws-quiz-active').style.display = 'block';
+            renderAWSQ();
+        }
+
+        function renderAWSQ() {
+            if (awsIdx >= awsFiltered.length) { showAWSResult(); return; }
+            const q = awsFiltered[awsIdx];
+            document.getElementById('aws-qdomain').textContent = q.domain;
+            document.getElementById('aws-qtext').textContent = q.q;
+            document.getElementById('aws-expl').className = 'explanation';
+            document.getElementById('aws-expl').innerHTML = '';
+            document.getElementById('aws-next-btn').disabled = true;
+            awsAnswered = false;
+            const prog = ((awsIdx) / awsFiltered.length) * 100;
+            document.getElementById('aws-prog').style.width = prog + '%';
+            document.getElementById('aws-counter').textContent = (awsIdx + 1) + ' / ' + awsFiltered.length;
+            document.getElementById('aws-score-live').textContent = awsScore + ' ✓';
+            const opts = document.getElementById('aws-opts');
+            opts.innerHTML = '';
+            const labels = ['A', 'B', 'C', 'D'];
+            q.opts.forEach((o, i) => {
+                const btn = document.createElement('button');
+                btn.className = 'opt';
+                btn.innerHTML = `<span class="opt-label">${labels[i]}</span>${o}`;
+                btn.onclick = () => selectAWS(i, q.a, q.exp);
+                opts.appendChild(btn);
+            });
+        }
+
+        function selectAWS(chosen, correct, exp) {
+            if (awsAnswered) return;
+            awsAnswered = true;
+            const opts = document.querySelectorAll('#aws-opts .opt');
+            opts.forEach((o, i) => {
+                o.classList.add('locked');
+                if (i === correct) o.classList.add('correct');
+                else if (i === chosen) o.classList.add('wrong');
+                else o.classList.add('dimmed');
+            });
+            if (chosen === correct) awsScore++;
+            const expl = document.getElementById('aws-expl');
+            expl.innerHTML = '<strong>Explanation:</strong> ' + exp;
+            expl.classList.add('show');
+            document.getElementById('aws-next-btn').disabled = false;
+            document.getElementById('aws-score-live').textContent = awsScore + ' ✓';
+            if (awsIdx === awsFiltered.length - 1) document.getElementById('aws-next-btn').textContent = 'See results';
+        }
+
+        function nextAWSQ() { awsIdx++; renderAWSQ(); }
+
+        function restartAWSQuiz() {
+            awsIdx = 0; awsScore = 0; awsAnswered = false;
+            awsFiltered = awsFilter === 'all' ? shuffleArray([...AWS_Q]) : shuffleArray(AWS_Q.filter(q => q.domain.includes(awsFilter)));
+            document.getElementById('aws-result-wrap').style.display = 'none';
+            document.getElementById('aws-quiz-active').style.display = 'block';
+            document.getElementById('aws-next-btn').textContent = 'Next →';
+            renderAWSQ();
+        }
+
+        function showAWSResult() {
+            const pct = Math.round((awsScore / awsFiltered.length) * 100);
+            document.getElementById('aws-final-score').textContent = awsScore;
+            document.getElementById('aws-final-total').textContent = '/ ' + awsFiltered.length;
+            let msg, sub;
+            if (pct >= 90) { msg = "Excellent!"; sub = "You're ready for the real exam. 🎉"; }
+            else if (pct >= 70) { msg = "Well done!"; sub = "Above passing threshold. Keep refining the weak spots."; }
+            else if (pct >= 50) { msg = "Good progress"; sub = "Study the explanations for the ones you missed."; }
+            else { msg = "Keep practicing"; sub = "Focus on the notes section and try again."; }
+            document.getElementById('aws-result-msg').textContent = msg;
+            document.getElementById('aws-result-sub').textContent = sub;
+            document.getElementById('aws-quiz-active').style.display = 'none';
+            document.getElementById('aws-result-wrap').style.display = 'block';
+            document.getElementById('aws-prog').style.width = '100%';
+            document.getElementById('aws-next-btn').textContent = 'Next →';
+        }
+
+        // ─── NPTEL QUIZ ───────────────────────────────────────────────────────────────
+        const NPTEL_B = [
             [
-                { category: "Data Analytics Basics", question: "Data analytics is best defined as:", options: ["Collection of large volumes of data", "Storage of structured and unstructured data", "Scientific process of transforming data into insights for decision-making", "Visualization of data using graphs"], answer: 2, explanation: "Data analytics is the science of analyzing raw data in order to make conclusions about that information. It involves processes to uncover insights that can drive better business decisions." },
-                { category: "Data Analytics Basics", question: "Which of the following represents the correct order of data analytics types based on workflow?", options: ["Predictive → Descriptive → Prescriptive → Diagnostic", "Descriptive → Diagnostic → Predictive → Prescriptive", "Diagnostic → Descriptive → Prescriptive → Predictive", "Descriptive → Predictive → Diagnostic → Prescriptive"], answer: 1, explanation: "The standard workflow moves from understanding what happened (Descriptive), why it happened (Diagnostic), what will happen (Predictive), to how we can make it happen (Prescriptive)." },
-                { category: "Data Analytics Basics", question: "Under which level of measurement does the variable 'height of a person' fall?", options: ["Nominal", "Ordinal", "Interval", "Ratio"], answer: 3, explanation: "Height is a 'Ratio' scale variable because it has a true zero point (zero height means no height) and the ratio between values is meaningful." },
-                { category: "Probability & Distributions", question: "Which distribution is most appropriate for rare events occurring over a fixed interval?", options: ["Binomial", "Normal", "Poisson", "Uniform"], answer: 2, explanation: "The Poisson distribution models the probability of a number of events occurring in a fixed interval of time or space, especially when events are rare." },
-                { category: "Probability & Distributions", question: "Which of the following is a discrete probability distribution?", options: ["Normal distribution", "Poisson distribution", "Exponential distribution", "Gamma distribution"], answer: 1, explanation: "The Poisson distribution is discrete as it counts integer events. Normal, Exponential, and Gamma are continuous distributions." },
-                { category: "Probability & Distributions", question: "The mean and variance of a Poisson distribution are:", options: ["μ and μ²", "√λ and λ", "λ and √λ", "λ and λ"], answer: 3, explanation: "A unique property of the Poisson distribution is that its mean (λ) is equal to its variance (λ)." },
-                { category: "Probability & Distributions", question: "Which distribution is commonly used to model the time between events in a Poisson process?", options: ["Binomial distribution", "Exponential distribution", "Uniform distribution", "Chi-square distribution"], answer: 1, explanation: "The Exponential distribution models the time between independent events occurring at a constant average rate (a Poisson process)." },
-                { category: "Probability & Distributions", question: "A fair coin is tossed twice. What is the probability of getting exactly one head?", options: ["0.25", "0.5", "0.75", "1.0"], answer: 1, explanation: "Possible outcomes: HH, HT, TH, TT. Exactly one head appears in HT and TH (2 outcomes out of 4). Probability = 2/4 = 0.5." },
-                { category: "Probability & Distributions", question: "If a binomial distribution has n = 10 and p = 0.4, what is the mean?", options: ["2.0", "4.0", "6.0", "10.0"], answer: 1, explanation: "The mean of a binomial distribution is calculated as n * p. So, 10 * 0.4 = 4.0." },
-                { category: "Probability & Distributions", question: "In a hypergeometric distribution, sampling is done:", options: ["Without replacement", "With replacement", "With constant probability", "From infinite population"], answer: 0, explanation: "Hypergeometric distribution is used when sampling from a finite population without replacement, meaning the probability of success changes each time." },
-                { category: "Probability & Distributions", question: "A dataset has a mean of 50 and a standard deviation of 10. According to the Empirical Rule, approximately what percentage of observations lie between 30 and 70?", options: ["68%", "75%", "95%", "99.7%"], answer: 2, explanation: "30 and 70 are 2 standard deviations away from the mean (50 ± 2*10). The Empirical Rule states ~95% of data falls within 2 standard deviations of the mean." },
-                { category: "Probability & Distributions", question: "A variable is normally distributed with: Mean (μ) = 50, Standard deviation (σ) = 10. What is the Z-score for a value of 65?", options: ["1.0", "1.5", "2.0", "2.5"], answer: 1, explanation: "Z = (X - μ) / σ = (65 - 50) / 10 = 15 / 10 = 1.5." },
-                { category: "Statistical Inference & Hypothesis Testing", question: "Which hypothesis must always contain equality?", options: ["Alternative hypothesis", "Research hypothesis", "Null hypothesis", "Working hypothesis"], answer: 2, explanation: "The Null Hypothesis (H₀) is the statement of 'no effect' or 'no difference' and always contains the equals sign (=, ≤, or ≥)." },
-                { category: "Statistical Inference & Hypothesis Testing", question: "Rejecting a true null hypothesis is called:", options: ["Type II error", "Power of the test", "Type I error", "Sampling error"], answer: 2, explanation: "Type I error occurs when we reject a null hypothesis that is actually true (a 'false positive')." },
-                { category: "Statistical Inference & Hypothesis Testing", question: "Which action reduces both Type I and Type II errors simultaneously?", options: ["Increasing α", "Decreasing α", "Increasing sample size", "Changing tail of test"], answer: 2, explanation: "Increasing sample size provides more information, which reduces the probability of both Type I and Type II errors." },
-                { category: "Statistical Inference & Hypothesis Testing", question: "The width of a confidence interval for the population mean will decrease when:", options: ["Confidence level increases", "Sample size increases", "Population variance increases", "Sample mean increases"], answer: 1, explanation: "A larger sample size (n) appears in the denominator of the standard error formula; as n increases, the margin of error decreases, making the CI narrower." },
-                { category: "Statistical Inference & Hypothesis Testing", question: "A 95% CI for a mean is (46.5, 51.5). Which statement is correct?", options: ["The population mean has a 95% probability of lying in the interval", "95% of sample means lie in this interval", "The CI is constructed so that 95% of such intervals contain μ", "The confidence level equals the sample mean"], answer: 2, explanation: "Confidence levels refer to the long-run success rate of the procedure. We expect 95% of intervals constructed this way to contain the true population mean." },
-                { category: "Statistical Inference & Hypothesis Testing", question: "When σ² is unknown and sample size is small, the appropriate distribution for CI estimation of μ is:", options: ["Z distribution", "Chi-square distribution", "F distribution", "t distribution"], answer: 3, explanation: "The Student's t-distribution is used when the population standard deviation is unknown and the sample size is small (typically n < 30)." },
-                { category: "Statistical Inference & Hypothesis Testing", question: "Sample size (n) = 36, mean = 34.6, σ = 12. H₀: μ ≤ 30, Ha: μ > 30. If tested at 95% confidence, the null hypothesis should:", options: ["not be rejected", "be rejected", "Not enough information", "None of these"], answer: 1, explanation: "Z-score = (34.6 - 30) / (12 / √36) = 4.6 / 2 = 2.3. The critical value for a one-tailed test at 95% is 1.645. Since 2.3 > 1.645, we reject H₀." },
-                { category: "Statistical Inference & Hypothesis Testing", question: "In testing H₀: μ=20 vs H₁: μ>20 with α = 0.05, the rejection region for a Z test is:", options: ["Z < -1.96", "Z > 1.645", "|Z| > 1.96", "Z < -1.645"], answer: 1, explanation: "This is a right-tailed test. For α = 0.05, the critical value is 1.645, so we reject if Z > 1.645." },
-                { category: "Regression & ANOVA", question: "In simple linear regression, the coefficient b (slope) represents:", options: ["Average value of Y", "Change in Y for a one-unit change in X", "Change in X for a one-unit change in Y", "Total variation in data"], answer: 1, explanation: "The slope (b) measures the expected change in the dependent variable (Y) for every single-unit increase in the independent variable (X)." },
-                { category: "Regression & ANOVA", question: "Least squares method minimizes:", options: ["Σ(residuals)", "(residuals)", "(residuals²)", "Σ(y²)"], answer: 2, explanation: "The 'Ordinary Least Squares' (OLS) method works by minimizing the sum of the squares of the vertical offsets (residuals) between each data point and the fitted line." },
-                { category: "Regression & ANOVA", question: "Standardized residuals are primarily used to:", options: ["Detect outliers", "Increase R²", "Reduce bias in coefficients", "Transform dependent variables"], answer: 0, explanation: "Standardizing residuals (dividing them by their standard deviation) helps identify outliers, as points with a standardized residual beyond ±2 or ±3 are likely outliers." },
-                { category: "Regression & ANOVA", question: "A residual plot showing a clear curved pattern suggests:", options: ["The model fits perfectly", "Constant variance exists", "A linear model may be inappropriate", "Errors are normally distributed"], answer: 2, explanation: "A healthy residual plot should look like random noise. Any discernible pattern (like a curve) indicates that the linear model isn't capturing the trend correctly." },
-                { category: "Regression & ANOVA", question: "ANOVA is preferred over multiple t-tests because it:", options: ["Reduces Type II error", "Eliminates assumptions", "Controls family-wise Type I error", "Works only for large samples"], answer: 2, explanation: "Running multiple t-tests increases the chance of making a Type I error across the whole set (family-wise error). ANOVA controls this by testing for any difference among means in a single step." },
-                { category: "Regression & ANOVA", question: "In ANOVA, if treatment means are far apart relative to within-group variability, F value will be:", options: ["Close to 0", "Close to 1", "Large", "Negative"], answer: 2, explanation: "F = (Between-group Variance) / (Within-group Variance). If the means are far apart, the between-group variance is large, leading to a large F-value." },
-                { category: "Regression & ANOVA", question: "In Randomized Block Design (RBD) the purpose of blocking is to:", options: ["Increase within-group variation", "Remove nuisance variation", "Increase error variance", "Increase Type II error"], answer: 1, explanation: "Blocking groups similar units together to account for (and remove) the variation caused by known, non-experimental factors (nuisance variables)." },
-                { category: "Machine Learning & Classification", question: "Which of the following correctly defines classification accuracy?", options: ["(TP+FP)/Total", "(TP+TN)/Total", "(FP+FN)/Total", "TP/(TP+FN)"], answer: 1, explanation: "Accuracy is the ratio of correctly predicted observations (True Positives + True Negatives) to the total number of observations." },
-                { category: "Machine Learning & Classification", question: "Which metric measures the proportion of actual positives correctly identified?", options: ["Precision", "Recall (Sensitivity)", "Specificity", "Accuracy"], answer: 1, explanation: "Recall (or Sensitivity) answers the question: 'Of all the actual positive cases, how many did we correctly predict?'" },
-                { category: "Machine Learning & Classification", question: "In an ROC curve, the x-axis represents:", options: ["Sensitivity", "Precision", "False Positive Rate", "Accuracy"], answer: 2, explanation: "A Receiver Operating Characteristic (ROC) curve plots True Positive Rate (Sensitivity) on the y-axis and False Positive Rate (1 - Specificity) on the x-axis." },
-                { category: "Machine Learning & Classification", question: "In logistic regression, the relationship between predictors and probability is modeled using:", options: ["linear probability function", "exponential function", "logistic (sigmoid) function", "quadratic function"], answer: 2, explanation: "The logistic function (S-curve) maps any real-valued number into a value between 0 and 1, representing a probability." },
-                { category: "Machine Learning & Classification", question: "The Euclidean distance formula is used to:", options: ["Measure similarity", "Normalize data", "Measure dissimilarity", "Reduce dimensions"], answer: 2, explanation: "Distance metrics like Euclidean distance measure how far apart points are in space, which is essentially a measure of dissimilarity (larger distance = less similar)." },
-                { category: "Machine Learning & Classification", question: "Which method is most sensitive to outliers in clustering?", options: ["Hierarchical clustering", "K-means clustering", "Chi-square test", "Regression"], answer: 1, explanation: "K-means clustering uses the arithmetic mean to define cluster centers, which is highly influenced by extreme values or outliers." },
-                { category: "Machine Learning & Classification", question: "Which of the following ensures binary splits in decision trees?", options: ["Information gain", "Gain ratio", "Gini index", "Entropy"], answer: 2, explanation: "The Gini index is widely used (e.g., in CART algorithm) to decide the best split and typically results in binary divisions." },
-                { category: "Python & Coding", question: "What is the purpose of: tbl = pd.read_excel('regr.xlsx')?", options: ["To read an Excel dataset into a pandas DataFrame", "To create a new Excel file", "To export regression results to Excel", "To convert a DataFrame into a NumPy array"], answer: 0, explanation: "The `pd.read_excel()` function in the Pandas library is specifically used to load Excel file data into a tabular structure called a DataFrame." },
-                { category: "Python & Coding", question: "In Pandas, which command is used to select rows by integer position?", options: ["df.loc", "df.select()", "df.iloc", "df.index"], answer: 2, explanation: "`.iloc` is used for integer-location based indexing, while `.loc` is used for label-based indexing." },
-                { category: "Python & Coding", question: "What will be the output of: from scipy.stats import poisson; print(poisson.var(4))", options: ["2.0", "4.0", "8.0", "16.0"], answer: 1, explanation: "As previously noted, the variance of a Poisson distribution is equal to its parameter λ (mean). Here λ = 4, so variance = 4." },
-                { category: "Python & Coding", question: "What will be the output of: from scipy.stats import norm; print(norm.pdf(0))", options: ["0.0", "0.25", "0.399", "1.0"], answer: 2, explanation: "For a standard normal distribution (mean=0, SD=1), the value of the probability density function (PDF) at x=0 is approximately 0.3989." }
+                { cat: "Data Analytics Basics", q: "Data analytics is best defined as:", opts: ["Collection of large volumes of data", "Storage of structured and unstructured data", "Scientific process of transforming data into insights for decision-making", "Visualization of data using graphs"], a: 2, exp: "Data analytics is the science of analyzing raw data to make conclusions that drive better business decisions." },
+                { cat: "Data Analytics Basics", q: "Which represents the correct order of data analytics types based on workflow?", opts: ["Predictive → Descriptive → Prescriptive → Diagnostic", "Descriptive → Diagnostic → Predictive → Prescriptive", "Diagnostic → Descriptive → Prescriptive → Predictive", "Descriptive → Predictive → Diagnostic → Prescriptive"], a: 1, exp: "Workflow: What happened? (Descriptive), Why? (Diagnostic), What's next? (Predictive), What to do? (Prescriptive)." },
+                { cat: "Measurement Scales", q: "Under which level of measurement does 'height of a person' fall?", opts: ["Nominal", "Ordinal", "Interval", "Ratio"], a: 3, exp: "Height is a Ratio scale — it has a true zero point and meaningful ratios between values." },
+                { cat: "Probability & Distributions", q: "Which distribution models rare events occurring over a fixed interval?", opts: ["Binomial", "Normal", "Poisson", "Uniform"], a: 2, exp: "The Poisson distribution models the probability of a number of rare events in a fixed time or space interval." },
+                { cat: "Probability & Distributions", q: "Which is a discrete probability distribution?", opts: ["Normal distribution", "Poisson distribution", "Exponential distribution", "Gamma distribution"], a: 1, exp: "Poisson is discrete (counts integer events). Normal, Exponential, and Gamma are continuous." },
+                { cat: "Probability & Distributions", q: "The mean and variance of a Poisson distribution are both equal to:", opts: ["μ and μ²", "√λ and λ", "λ and √λ", "λ and λ"], a: 3, exp: "A key property of Poisson: mean = variance = λ." },
+                { cat: "Probability & Distributions", q: "Which distribution models the time between events in a Poisson process?", opts: ["Binomial", "Exponential", "Uniform", "Chi-square"], a: 1, exp: "The Exponential distribution models the time between independent events occurring at a constant average rate." },
+                { cat: "Probability & Distributions", q: "A fair coin is tossed twice. P(exactly one head) = ?", opts: ["0.25", "0.5", "0.75", "1.0"], a: 1, exp: "Outcomes: HH, HT, TH, TT. Exactly one head appears in HT and TH. P = 2/4 = 0.5." },
+                { cat: "Probability & Distributions", q: "Binomial: n=10, p=0.4. What is the mean?", opts: ["2.0", "4.0", "6.0", "10.0"], a: 1, exp: "Mean of binomial = n × p = 10 × 0.4 = 4.0." },
+                { cat: "Probability & Distributions", q: "In a hypergeometric distribution, sampling is done:", opts: ["Without replacement", "With replacement", "With constant probability", "From infinite population"], a: 0, exp: "Hypergeometric is used when sampling from a finite population without replacement." },
+                { cat: "Probability & Distributions", q: "Mean=50, SD=10. By the Empirical Rule, what % lies between 30 and 70?", opts: ["68%", "75%", "95%", "99.7%"], a: 2, exp: "30 and 70 are 2 SDs from the mean (50 ± 20). The Empirical Rule states ~95% falls within 2 SDs." },
+                { cat: "Probability & Distributions", q: "Normal dist: μ=50, σ=10. Z-score for X=65?", opts: ["1.0", "1.5", "2.0", "2.5"], a: 1, exp: "Z = (X - μ) / σ = (65 - 50) / 10 = 1.5." },
+                { cat: "Hypothesis Testing", q: "Which hypothesis must always contain an equality sign?", opts: ["Alternative hypothesis", "Research hypothesis", "Null hypothesis", "Working hypothesis"], a: 2, exp: "The Null Hypothesis (H₀) always contains =, ≤, or ≥ — it is the 'no effect' statement." },
+                { cat: "Hypothesis Testing", q: "Rejecting a true null hypothesis is called:", opts: ["Type II error", "Power of the test", "Type I error", "Sampling error"], a: 2, exp: "Type I error = rejecting H₀ when it's actually true (false positive)." },
+                { cat: "Hypothesis Testing", q: "Which action reduces BOTH Type I and Type II errors simultaneously?", opts: ["Increasing α", "Decreasing α", "Increasing sample size", "Changing the tail of test"], a: 2, exp: "Increasing sample size provides more information, reducing the probability of both error types." },
+                { cat: "Hypothesis Testing", q: "Width of a confidence interval for μ decreases when:", opts: ["Confidence level increases", "Sample size increases", "Population variance increases", "Sample mean increases"], a: 1, exp: "Larger n reduces the standard error (n is in the denominator), making the CI narrower." },
+                { cat: "Hypothesis Testing", q: "95% CI for a mean is (46.5, 51.5). Which statement is correct?", opts: ["Population mean has 95% probability of lying in interval", "95% of sample means lie here", "95% of such intervals contain μ", "Confidence level equals sample mean"], a: 2, exp: "The 95% confidence level means if we repeated this procedure many times, 95% of the resulting intervals would contain μ." },
+                { cat: "Hypothesis Testing", q: "When σ² is unknown and sample is small, which distribution is used?", opts: ["Z distribution", "Chi-square", "F distribution", "t distribution"], a: 3, exp: "Student's t-distribution is used when population SD is unknown and sample size is small (n < 30)." },
+                { cat: "Hypothesis Testing", q: "n=36, mean=34.6, σ=12. H₀: μ≤30, Hₐ: μ>30 at 95% confidence. Null hypothesis should:", opts: ["Not be rejected", "Be rejected", "Not enough info", "None of these"], a: 1, exp: "Z = (34.6-30)/(12/√36) = 4.6/2 = 2.3. Critical value (one-tailed, 95%) = 1.645. 2.3 > 1.645, so reject H₀." },
+                { cat: "Hypothesis Testing", q: "Testing H₀: μ=20 vs H₁: μ>20 with α=0.05. Rejection region is:", opts: ["Z < -1.96", "Z > 1.645", "|Z| > 1.96", "Z < -1.645"], a: 1, exp: "Right-tailed test, α=0.05. Critical value = 1.645. Reject if Z > 1.645." },
+                { cat: "Regression & ANOVA", q: "In simple linear regression, the slope b represents:", opts: ["Average value of Y", "Change in Y for a one-unit change in X", "Change in X for a one-unit change in Y", "Total variation"], a: 1, exp: "The slope b measures the expected change in Y for every single-unit increase in X." },
+                { cat: "Regression & ANOVA", q: "Least squares method minimizes:", opts: ["Σ(residuals)", "(residuals)", "Σ(residuals²)", "Σ(y²)"], a: 2, exp: "OLS minimizes the sum of squared residuals (vertical distances from data points to the fitted line)." },
+                { cat: "Regression & ANOVA", q: "Standardized residuals are primarily used to:", opts: ["Detect outliers", "Increase R²", "Reduce bias", "Transform dependent variables"], a: 0, exp: "Points with standardized residuals beyond ±2 or ±3 are likely outliers." },
+                { cat: "Regression & ANOVA", q: "A residual plot showing a curved pattern suggests:", opts: ["Perfect model fit", "Constant variance", "Linear model may be inappropriate", "Normally distributed errors"], a: 2, exp: "Patterns in residual plots indicate the linear model isn't capturing the full relationship." },
+                { cat: "Regression & ANOVA", q: "ANOVA is preferred over multiple t-tests because it:", opts: ["Reduces Type II error", "Eliminates assumptions", "Controls family-wise Type I error", "Works only for large samples"], a: 2, exp: "Running multiple t-tests inflates the overall Type I error rate. ANOVA controls this in a single test." },
+                { cat: "Regression & ANOVA", q: "In ANOVA, if treatment means are far apart relative to within-group variance, F will be:", opts: ["Close to 0", "Close to 1", "Large", "Negative"], a: 2, exp: "F = Between-group variance / Within-group variance. Large between-group separation → large F." },
+                { cat: "Regression & ANOVA", q: "In Randomized Block Design (RBD), blocking's purpose is to:", opts: ["Increase within-group variation", "Remove nuisance variation", "Increase error variance", "Increase Type II error"], a: 1, exp: "Blocking groups similar units to account for and remove variation caused by known, non-experimental factors." },
+                { cat: "Machine Learning", q: "Classification accuracy is defined as:", opts: ["(TP+FP)/Total", "(TP+TN)/Total", "(FP+FN)/Total", "TP/(TP+FN)"], a: 1, exp: "Accuracy = (True Positives + True Negatives) / Total observations." },
+                { cat: "Machine Learning", q: "Which metric measures the proportion of actual positives correctly identified?", opts: ["Precision", "Recall (Sensitivity)", "Specificity", "Accuracy"], a: 1, exp: "Recall answers: Of all actual positive cases, how many did the model correctly predict?" },
+                { cat: "Machine Learning", q: "In an ROC curve, the x-axis represents:", opts: ["Sensitivity", "Precision", "False Positive Rate", "Accuracy"], a: 2, exp: "ROC curve: y-axis = True Positive Rate (Sensitivity), x-axis = False Positive Rate (1 - Specificity)." },
+                { cat: "Machine Learning", q: "In logistic regression, probability is modeled using:", opts: ["Linear probability function", "Exponential function", "Logistic (sigmoid) function", "Quadratic function"], a: 2, exp: "The sigmoid/logistic function maps any real value to a probability between 0 and 1." },
+                { cat: "Machine Learning", q: "Euclidean distance formula measures:", opts: ["Similarity", "Data normalization", "Dissimilarity", "Dimensionality reduction"], a: 2, exp: "Distance metrics measure how far apart points are — larger distance means less similar (dissimilarity)." },
+                { cat: "Machine Learning", q: "Which clustering method is most sensitive to outliers?", opts: ["Hierarchical clustering", "K-means clustering", "Chi-square test", "Regression"], a: 1, exp: "K-means uses the arithmetic mean for cluster centers, which is heavily influenced by outliers." },
+                { cat: "Machine Learning", q: "Which ensures binary splits in decision trees?", opts: ["Information gain", "Gain ratio", "Gini index", "Entropy"], a: 2, exp: "Gini index (used in CART algorithm) typically results in binary splits." },
+                { cat: "Python", q: "What does tbl = pd.read_excel('regr.xlsx') do?", opts: ["Reads Excel file into a Pandas DataFrame", "Creates a new Excel file", "Exports results to Excel", "Converts DataFrame to NumPy array"], a: 0, exp: "pd.read_excel() loads Excel data into a Pandas DataFrame for analysis." },
+                { cat: "Python", q: "In Pandas, which command is used to select rows by integer position?", opts: ["df.loc", "df.select()", "df.iloc", "df.index"], a: 2, exp: ".iloc is integer-location based indexing. .loc is label-based indexing." },
+                { cat: "Python", q: "Output of: from scipy.stats import poisson; print(poisson.var(4))", opts: ["2.0", "4.0", "8.0", "16.0"], a: 1, exp: "Variance of Poisson distribution equals λ. Here λ=4, so variance=4." },
+                { cat: "Python", q: "Output of: from scipy.stats import norm; print(norm.pdf(0))", opts: ["0.0", "0.25", "0.399", "1.0"], a: 2, exp: "For standard normal at x=0, PDF ≈ 0.3989 (maximum value of the standard normal curve)." },
             ],
             [
-                { category: "Foundations", question: "State True or false: Data can be generated by machines but not by humans.", options: ["True", "False"], answer: 1, explanation: "Data is generated by both humans (social media, sensors, surveys) and machines (logs, automated systems)." },
-                { category: "Data Analytics Types", question: "Which one of the following is not a classification of Data Analytics?", options: ["Diagnostic analytics", "Deceptive analytics", "Predictive analytics", "Prescriptive analytics"], answer: 1, explanation: "The standard hierarchy includes Descriptive, Diagnostic, Predictive, and Prescriptive analytics. 'Deceptive' is not a standard type." },
-                { category: "Measurement Scales", question: "True or false: Nominal scale is the lowest level of measurement and ratio scale is the highest.", options: ["True", "False"], answer: 0, explanation: "Correct. Nominal provides simple labels, while Ratio provides the most comprehensive data including a true zero point." },
-                { category: "Pandas Indexing", question: "Statement A: With iloc, we can pass negative values. Statement B: With loc, we can pass negative values.", options: ["A and B are correct", "Both are false", "A is correct, B is false", "B is correct, A is false"], answer: 2, explanation: "iloc supports integer position indexing (including negative like Python lists). loc is label-based and doesn't support negative integers unless the labels themselves are negative." },
-                { category: "Dispersion", question: "Which of the following is not a measure of dispersion?", options: ["Skewness", "Kurtosis", "Range", "Percentile"], answer: 3, explanation: "Percentile is a measure of relative position, not dispersion. While Skewness/Kurtosis describe shape, Range definitely measures spread." },
-                { category: "Distributions", question: "True or False: Bimodal Data sets contains two modes.", options: ["True", "False"], answer: 0, explanation: "Correct. A bimodal distribution has two distinct peaks, representing two most frequent values or ranges." },
-                { category: "Visualization", question: "Bar Charts are used for:", options: ["Continuous data", "Categorical data", "Both", "None"], answer: 1, explanation: "Bar charts are specifically designed to compare discrete categories. Histograms are typically used for continuous data." },
-                { category: "Data Types", question: "Median is not applicable to:", options: ["Ordinal data", "Interval data", "Nominal data", "None"], answer: 2, explanation: "Median requires data to be ordered. Nominal data lacks any inherent ranking, making the 'middle' value meaningless." },
-                { category: "Data Types", question: "Arithmetic mean is not applicable for ordinal or nominal data.", options: ["True", "False"], answer: 0, explanation: "True. Mean requires numerical magnitudes. Calculating a 'mean' for categories or ranks is mathematically unsound." },
-                { category: "Definitions", question: "Data analytics is best defined as:", options: ["Collection of large data", "Data storage", "Process of transforming data into insights", "Visualization"], answer: 2, explanation: "Data analytics focuses on deriving actionable insights from raw data to support strategic decisions." },
-                { category: "Workflow", question: "Correct order of data analytics types based on workflow?", options: ["Predictive -> Descriptive", "Descriptive -> Diagnostic -> Predictive -> Prescriptive", "Diagnostic -> Predictive", "Descriptive -> Predictive"], answer: 1, explanation: "The logic flows: What happened? (Descriptive), Why? (Diagnostic), What's next? (Predictive), What should we do? (Prescriptive)." },
-                { category: "Measurements", question: "Under which level of measurement does 'height of a person' fall?", options: ["Nominal", "Ordinal", "Interval", "Ratio"], answer: 3, explanation: "Height is a ratio variable because it has a true zero and meaningful intervals." },
-                { category: "Probability", question: "College has 3 assistant-ships for 8 students. How many groups of three?", options: ["126", "56", "136", "130"], answer: 1, explanation: "Using combinations (8C3) = (8 * 7 * 6) / (3 * 2 * 1) = 56." },
-                { category: "Experimentation", question: "What is each individual outcome of an experiment called?", options: ["Sample space", "Sample point", "Experiment", "Individual"], answer: 1, explanation: "A sample point is a single possible outcome in the sample space." },
-                { category: "Probability", question: "Two events having nonzero probabilities:", options: ["Can be both exclusive and independent", "Cannot be both exclusive and independent", "Always mutually exclusive", "Always independent"], answer: 1, explanation: "If two events are mutually exclusive, the occurrence of one ensures the other cannot happen, meaning they are dependent." },
-                { category: "Permutations", question: "Pos: President, VP. Sample 10. How many possibilities?", options: ["90", "100", "120", "130"], answer: 0, explanation: "Order matters here (Permutation): 10 * 9 = 90." },
-                { category: "Distributions", question: "A standard normal distribution has:", options: ["Mean 1, SD 0", "Mean 0.5, SD 0.5", "Mean 0, SD 1", "Mean 1, SD 1"], answer: 2, explanation: "The standard normal distribution (Z-distribution) has a mean of 0 and a standard deviation of 1." },
-                { category: "Distributions", question: "Mean 200, SD 25. Probability of weight > 241.25?", options: ["0.4505", "0.0495", "0.9505", "0.9010"], answer: 1, explanation: "Z = (241.25 - 200) / 25 = 1.65. Area for Z > 1.65 is approx 0.0495." },
-                { category: "Distributions", question: "Mean 200, SD 25. Probability of weight < 250?", options: ["0.4772", "0.9772", "0.0528", "0.5000"], answer: 1, explanation: "Z = (250 - 200) / 25 = 2.0. Area for Z < 2.0 is 0.5 + 0.4772 = 0.9772." },
-                { category: "Distributions", question: "Binomial and normal Distributions are discrete probability distributions.", options: ["True", "False"], answer: 1, explanation: "Normal distribution is continuous. Binomial is discrete." },
-                { category: "Distributions", question: "Binomial: p=0.5, n=100. Expected value?", options: ["0.50", "0.30", "100", "50"], answer: 3, explanation: "Expected value (mean) = n * p = 100 * 0.5 = 50." },
-                { category: "Probability", question: "All mutually exclusive events are independent events.", options: ["True", "False"], answer: 1, explanation: "Mutually exclusive events are highly dependent; if one happens, the other cannot." },
-                { category: "Inference", question: "The specific value of a random variable is called estimator.", options: ["True", "False"], answer: 1, explanation: "An estimator is the formula; the specific value is called an 'estimate'." },
-                { category: "Inference", question: "Prop P=0.35, n=100. Probability of proportion between 0.3 and 0.4?", options: ["0.961", "0.827", "0.706", "0.53"], answer: 2, explanation: "Standard Error ≈ 0.047. Z-scores ≈ ±1.05. Area ≈ 0.706." },
-                { category: "Sampling", question: "Stratified random sampling is a method in which:", options: ["Samples from strata", "Various strata selected", "Population divided into strata, then random samples from each", "None"], answer: 2, explanation: "The population is partitioned into strata, and samples are drawn independently from each." },
-                { category: "Basic Terms", question: "A population is a set of all items or individual of interest.", options: ["True", "False"], answer: 0, explanation: "True. The population is the entire group we want to study." },
-                { category: "Probability", question: "90 MCQs, p=0.25. Probability of score ≥ 10?", options: ["0.9997", "0.7894", "0", "0.001"], answer: 0, explanation: "Expected score is 22.5. Getting ≥ 10 is almost guaranteed (P ≈ 0.9997)." },
-                { category: "Probability", question: "Defective 5%, batch of 10. Probability exactly 2 are defective?", options: ["0.065", "0.075", "0.085", "0.095"], answer: 1, explanation: "Binomial: 10C2 * (0.05)^2 * (0.95)^8 ≈ 0.075." },
-                { category: "Poisson", question: "Avg sales 2.5/day. Probability of 5 car sales?", options: ["0.0668", "0.544", "0.082", "0.205"], answer: 0, explanation: "Poisson: (e^-2.5 * 2.5^5) / 5! ≈ 0.0668." },
-                { category: "Poisson", question: "Avg sales 2.5/day. Probability of no sales?", options: ["0.0668", "0.544", "0.082", "0.205"], answer: 2, explanation: "Poisson for x=0: e^-2.5 ≈ 0.082." },
-                { category: "Confidence Intervals", question: "Sample 100, 25 female. 95% CI Lower Limit?", options: ["0.150", "0.145", "0.165", "0.175"], answer: 2, explanation: "p=0.25, SE≈0.0433. CI = 0.25 - 1.96*0.0433 ≈ 0.165." },
-                { category: "Confidence Intervals", question: "Sample 100, 25 female. 95% CI Upper Limit?", options: ["0.150", "0.165", "0.465", "0.335"], answer: 3, explanation: "CI = 0.25 + 1.96*0.0433 ≈ 0.335." },
-                { category: "Hypothesis Testing", question: "n=20, population SD is known. Which test?", options: ["t-test", "z-test", "Both", "F-test"], answer: 1, explanation: "If population SD is known, use a Z-test." },
-                { category: "Hypothesis Testing", question: "H₀: mu1- mu2 = 0 is a:", options: ["Upper tail", "Lower tail", "Two tail", "F-test"], answer: 2, explanation: "An equality null is tested with a two-tailed test." },
-                { category: "Hypothesis Testing", question: "Mean life = 375, SD=100, n=64. Null Hypothesis?", options: ["Mu = 375", "Mu ≤ 375", "Mu = 350", "Mu ≥ 350"], answer: 0, explanation: "Test for 'equal to' makes H₀: μ = 375." },
-                { category: "Hypothesis Testing", question: "Mean life = 375, SD=100, n=64, sample mean=350. Evidence Mu ≠ 375 at α=0.05?", options: ["Yes", "No", "None"], answer: 0, explanation: "Z = -2.0. Since |-2.0| > 1.96, reject H₀. Yes, there is evidence." },
-                { category: "Hypothesis Testing", question: "One-tailed test, z=0. P-value?", options: ["Zero", "-0.5", "0.5", "1.0"], answer: 2, explanation: "Center of normal distribution has 0.5 area on each side." },
-                { category: "Inference", question: "Error of rejecting a true null hypothesis is:", options: ["Type I", "Type II", "Beta", "Low info"], answer: 0, explanation: "Type I error is a 'false positive'." },
-                { category: "Inference", question: "Mean 168. n=25, x-bar=172.5, s=15.4. t-statistic?", options: ["2", "-2", "1.46", "-1.46"], answer: 2, explanation: "t = (172.5 - 168) / (15.4/5) ≈ 1.46." },
-                { category: "Inference", question: "If null hypothesis is rejected:", options: ["No conclusions", "Alternative is true", "Data error", "Small sample"], answer: 1, explanation: "Rejecting the null provides evidence for the alternative." },
-                { category: "Inference", question: "In testing, alpha is:", options: ["1 - sig", "Crit value", "Conf level", "Level of significance"], answer: 3, explanation: "Alpha is the risk we accept of making a Type I error." },
-                { category: "Inference", question: "Rejected at 5%. At 1% it:", options: ["Always rejected", "Always accepted", "Never tested", "May or may not"], answer: 3, explanation: "1% is stricter; a result significant at 5% might not be at 1%." },
-                { category: "ANOVA", question: "In ANOVA, 'factor' refers to:", options: ["Dependent variable", "Independent variable", "Levels", "F value"], answer: 1, explanation: "Factor is the categorical independent variable being studied." },
-                { category: "ANOVA", question: "ANOVA: 3 treatments, 10 obs each, SSE=500. MSE?", options: ["130.2", "48.8", "18.52", "30.0"], answer: 2, explanation: "df = 30-3=27. MSE = 500 / 27 ≈ 18.52." },
-                { category: "ANOVA", question: "The 'F' ratio in randomized ANOVA is:", options: ["MST/MSE", "MSTR/MSE", "MSE/MSTR", "MSE/MST"], answer: 1, explanation: "F = MSTR / MSE." },
-                { category: "ANOVA", question: "ANOVA: 7 samples, 10 obs each. Degrees of Freedom for F?", options: ["7 num, 20 den", "5 num, 20 den", "6 num, 63 den", "7 num, 63 den"], answer: 2, explanation: "num df = 7-1=6. den df = 70-7=63." },
-                { category: "ANOVA", question: "ANOVA: SST=200, SSTR=80. SSE is:", options: ["280", "120", "80", "220"], answer: 1, explanation: "SSE = SST - SSTR = 200-80=120." },
-                { category: "ANOVA", question: "Critical F value (8, 29) at alpha=0.01?", options: ["2.18", "3.20", "3.53", "3.94"], answer: 1, explanation: "Standard F-table value for (8, 29) at 0.01 is 3.20." },
-                { category: "ANOVA", question: "n1=15, n2=35, SD equal/unknown. Which distribution?", options: ["t with 51", "z with 50", "z with 49", "t with 48"], answer: 3, explanation: "df = 15+35-2 = 48. Use t-distribution." },
-                { category: "Proportions", question: "P1 - P2 is approximated by normal distribution.", options: ["True", "False"], answer: 0, explanation: "Correct. For large enough samples, the difference between proportions is approximately normal." }
+                { cat: "Foundations", q: "True or False: Data can be generated by machines but not by humans.", opts: ["True", "False"], a: 1, exp: "Data is generated by both humans (social media, surveys) and machines (logs, sensors)." },
+                { cat: "Data Analytics", q: "Which is NOT a standard classification of Data Analytics?", opts: ["Diagnostic analytics", "Deceptive analytics", "Predictive analytics", "Prescriptive analytics"], a: 1, exp: "Standard types are Descriptive, Diagnostic, Predictive, Prescriptive. Deceptive is not a real type." },
+                { cat: "Measurement", q: "True/False: Nominal is the lowest level of measurement and Ratio is the highest.", opts: ["True", "False"], a: 0, exp: "Correct. Nominal provides labels only. Ratio has all properties including a true zero." },
+                { cat: "Pandas", q: "Statement A: iloc accepts negative values. Statement B: loc accepts negative values.", opts: ["Both correct", "Both false", "A correct, B false", "B correct, A false"], a: 2, exp: "iloc supports negative indexing (like Python lists). loc is label-based and doesn't support negative integers unless labels are negative." },
+                { cat: "Statistics", q: "Which is NOT a measure of dispersion?", opts: ["Skewness", "Kurtosis", "Range", "Percentile"], a: 3, exp: "Percentile is a position measure, not dispersion. Range measures spread. Skewness and Kurtosis describe shape." },
+                { cat: "Statistics", q: "True/False: Bimodal datasets contain two modes.", opts: ["True", "False"], a: 0, exp: "Correct. A bimodal distribution has two distinct peaks — two most frequent values." },
+                { cat: "Visualization", q: "Bar charts are used for:", opts: ["Continuous data", "Categorical data", "Both", "None"], a: 1, exp: "Bar charts compare discrete categories. Histograms are used for continuous data." },
+                { cat: "Data Types", q: "Median is NOT applicable to:", opts: ["Ordinal data", "Interval data", "Nominal data", "None"], a: 2, exp: "Median requires ordered data. Nominal data lacks inherent ranking, making 'middle' meaningless." },
+                { cat: "Data Types", q: "Arithmetic mean is not applicable for ordinal or nominal data.", opts: ["True", "False"], a: 0, exp: "True. Mean requires numerical magnitudes — calculating it for categories is mathematically unsound." },
+                { cat: "Definitions", q: "Data analytics is best defined as:", opts: ["Collection of large data", "Data storage", "Process of transforming data into insights", "Visualization"], a: 2, exp: "Data analytics focuses on deriving actionable insights from raw data to support decisions." },
+                { cat: "Workflow", q: "Correct order of analytics types?", opts: ["Predictive→Descriptive", "Descriptive→Diagnostic→Predictive→Prescriptive", "Diagnostic→Predictive", "Descriptive→Predictive"], a: 1, exp: "What happened? → Why? → What next? → What should we do?" },
+                { cat: "Measurement", q: "'Height of a person' falls under which level of measurement?", opts: ["Nominal", "Ordinal", "Interval", "Ratio"], a: 3, exp: "Height is Ratio — true zero and meaningful ratios." },
+                { cat: "Probability", q: "3 assistant-ships for 8 students. How many groups of three?", opts: ["126", "56", "136", "130"], a: 1, exp: "Combinations: 8C3 = (8×7×6)/(3×2×1) = 56." },
+                { cat: "Probability", q: "Each individual outcome of an experiment is called:", opts: ["Sample space", "Sample point", "Experiment", "Individual"], a: 1, exp: "A sample point is a single possible outcome in the sample space." },
+                { cat: "Probability", q: "Two events with nonzero probabilities:", opts: ["Can be both exclusive and independent", "Cannot be both exclusive and independent", "Always mutually exclusive", "Always independent"], a: 1, exp: "Mutually exclusive events cannot occur simultaneously, making them dependent on each other." },
+                { cat: "Permutations", q: "Select President and VP from 10 people. How many possibilities?", opts: ["90", "100", "120", "130"], a: 0, exp: "Order matters (permutation): 10 × 9 = 90." },
+                { cat: "Distributions", q: "Standard normal distribution has:", opts: ["Mean 1, SD 0", "Mean 0.5, SD 0.5", "Mean 0, SD 1", "Mean 1, SD 1"], a: 2, exp: "Standard normal (Z-distribution): mean=0, SD=1." },
+                { cat: "Distributions", q: "Mean=200, SD=25. P(weight > 241.25) = ?", opts: ["0.4505", "0.0495", "0.9505", "0.9010"], a: 1, exp: "Z = (241.25-200)/25 = 1.65. Area for Z > 1.65 ≈ 0.0495." },
+                { cat: "Distributions", q: "Mean=200, SD=25. P(weight < 250) = ?", opts: ["0.4772", "0.9772", "0.0528", "0.5000"], a: 1, exp: "Z = (250-200)/25 = 2.0. Area for Z < 2.0 = 0.5 + 0.4772 = 0.9772." },
+                { cat: "Distributions", q: "True/False: Binomial AND Normal are both discrete distributions.", opts: ["True", "False"], a: 1, exp: "Normal is continuous. Binomial is discrete. So the statement is false." },
+                { cat: "Distributions", q: "Binomial: p=0.5, n=100. Expected value?", opts: ["0.50", "0.30", "100", "50"], a: 3, exp: "E[X] = n × p = 100 × 0.5 = 50." },
+                { cat: "Probability", q: "All mutually exclusive events are independent events.", opts: ["True", "False"], a: 1, exp: "False. Mutually exclusive events are dependent — one happening prevents the other." },
+                { cat: "Inference", q: "The specific value of a random variable is called an estimator.", opts: ["True", "False"], a: 1, exp: "False. An estimator is the formula/method. A specific computed value is an estimate." },
+                { cat: "Inference", q: "P=0.35, n=100. P(sample proportion between 0.3 and 0.4)?", opts: ["0.961", "0.827", "0.706", "0.53"], a: 2, exp: "SE ≈ 0.047. Z-scores ≈ ±1.05. Area ≈ 0.706." },
+                { cat: "Sampling", q: "Stratified random sampling means:", opts: ["Samples from strata", "Various strata selected", "Population divided into strata, then random samples from each", "None"], a: 2, exp: "Population is partitioned into strata; samples are drawn independently from each stratum." },
+                { cat: "Basic Terms", q: "A population is the set of ALL items or individuals of interest.", opts: ["True", "False"], a: 0, exp: "True. The population is the entire group you want to study." },
+                { cat: "Probability", q: "90 MCQs, p=0.25. P(score ≥ 10)?", opts: ["0.9997", "0.7894", "0", "0.001"], a: 0, exp: "Expected score = 22.5. Getting ≥10 when expected is 22.5 is almost certain (≈0.9997)." },
+                { cat: "Probability", q: "Defective rate 5%, batch of 10. P(exactly 2 defective)?", opts: ["0.065", "0.075", "0.085", "0.095"], a: 1, exp: "Binomial: 10C2 × (0.05)² × (0.95)⁸ ≈ 0.075." },
+                { cat: "Poisson", q: "Avg sales 2.5/day. P(exactly 5 car sales)?", opts: ["0.0668", "0.544", "0.082", "0.205"], a: 0, exp: "Poisson: e^(-2.5) × 2.5⁵ / 5! ≈ 0.0668." },
+                { cat: "Poisson", q: "Avg sales 2.5/day. P(no sales)?", opts: ["0.0668", "0.544", "0.082", "0.205"], a: 2, exp: "Poisson for x=0: e^(-2.5) ≈ 0.082." },
+                { cat: "Confidence Intervals", q: "Sample 100, 25 female. 95% CI Lower Limit?", opts: ["0.150", "0.145", "0.165", "0.175"], a: 2, exp: "p=0.25, SE≈0.0433. CI = 0.25 - 1.96×0.0433 ≈ 0.165." },
+                { cat: "Confidence Intervals", q: "Sample 100, 25 female. 95% CI Upper Limit?", opts: ["0.150", "0.165", "0.465", "0.335"], a: 3, exp: "CI = 0.25 + 1.96×0.0433 ≈ 0.335." },
+                { cat: "Hypothesis Testing", q: "n=20, population SD is known. Which test?", opts: ["t-test", "z-test", "Both", "F-test"], a: 1, exp: "If population SD is known, use Z-test regardless of sample size." },
+                { cat: "Hypothesis Testing", q: "H₀: μ₁ - μ₂ = 0 is a:", opts: ["Upper tail", "Lower tail", "Two tail", "F-test"], a: 2, exp: "An equality null hypothesis uses a two-tailed test." },
+                { cat: "Hypothesis Testing", q: "Mean life=375, SD=100, n=64. Null Hypothesis?", opts: ["μ = 375", "μ ≤ 375", "μ = 350", "μ ≥ 350"], a: 0, exp: "Testing 'equal to' means H₀: μ = 375." },
+                { cat: "Hypothesis Testing", q: "Mean=375, SD=100, n=64, sample mean=350. Evidence μ≠375 at α=0.05?", opts: ["Yes", "No", "None"], a: 0, exp: "Z = (350-375)/(100/8) = -2.0. |−2.0| > 1.96, so reject H₀. Yes, there is evidence." },
+                { cat: "Hypothesis Testing", q: "One-tailed test, z=0. P-value?", opts: ["Zero", "-0.5", "0.5", "1.0"], a: 2, exp: "z=0 is the center of the normal distribution, with 0.5 area on each side." },
+                { cat: "Inference", q: "Error of rejecting a true null hypothesis is:", opts: ["Type I", "Type II", "Beta", "Low info"], a: 0, exp: "Type I error is a false positive — rejecting H₀ when it's actually true." },
+                { cat: "Inference", q: "Mean=168, n=25, x̄=172.5, s=15.4. t-statistic?", opts: ["2", "-2", "1.46", "-1.46"], a: 2, exp: "t = (172.5-168)/(15.4/5) = 4.5/3.08 ≈ 1.46." },
+                { cat: "Inference", q: "If the null hypothesis is rejected:", opts: ["No conclusions", "Alternative hypothesis is accepted", "Data error", "Small sample"], a: 1, exp: "Rejecting H₀ provides statistical evidence in favor of the alternative hypothesis." },
+                { cat: "Inference", q: "Alpha in hypothesis testing is:", opts: ["1 - significance", "Critical value", "Confidence level", "Level of significance"], a: 3, exp: "Alpha (α) is the level of significance — the maximum acceptable probability of a Type I error." },
+                { cat: "Inference", q: "Rejected at 5% significance. At 1% it:", opts: ["Always rejected", "Always accepted", "Never tested", "May or may not be rejected"], a: 3, exp: "1% is stricter than 5%. A result significant at 5% may or may not be significant at 1%." },
+                { cat: "ANOVA", q: "In ANOVA, 'factor' refers to:", opts: ["Dependent variable", "Independent variable", "Levels", "F value"], a: 1, exp: "Factor is the categorical independent variable (grouping variable) being studied in ANOVA." },
+                { cat: "ANOVA", q: "ANOVA: 3 treatments, 10 obs each, SSE=500. MSE?", opts: ["130.2", "48.8", "18.52", "30.0"], a: 2, exp: "df = 30-3 = 27. MSE = SSE/df = 500/27 ≈ 18.52." },
+                { cat: "ANOVA", q: "The F ratio in randomized ANOVA is:", opts: ["MST/MSE", "MSTR/MSE", "MSE/MSTR", "MSE/MST"], a: 1, exp: "F = MSTR (Mean Square Treatment) / MSE (Mean Square Error)." },
+                { cat: "ANOVA", q: "ANOVA: 7 samples, 10 obs each. Degrees of Freedom for F?", opts: ["7 num, 20 den", "5 num, 20 den", "6 num, 63 den", "7 num, 63 den"], a: 2, exp: "Numerator df = 7-1 = 6. Denominator df = 70-7 = 63." },
+                { cat: "ANOVA", q: "ANOVA: SST=200, SSTR=80. SSE is:", opts: ["280", "120", "80", "220"], a: 1, exp: "SSE = SST - SSTR = 200 - 80 = 120." },
+                { cat: "Proportions", q: "P₁ - P₂ is approximated by normal distribution.", opts: ["True", "False"], a: 0, exp: "True. For sufficiently large samples, the difference between sample proportions is approximately normal." },
             ]
         ];
 
-        let currentBatchIndex = 0;
-        let quizData = batches[currentBatchIndex];
-        let currentQuestion = 0;
-        let score = 0;
-        let answered = false;
+        let npBatch = 0;
+        let npData = shuffleArray([...NPTEL_B[0]]);
+        let npIdx = 0;
+        let npScore = 0;
+        let npAnswered = false;
 
-        const nextBtn = document.getElementById('next-btn');
-        const progressBar = document.getElementById('progress-bar');
-        const resultScreen = document.getElementById('result-screen');
-        const quizScreen = document.getElementById('quiz-screen');
+        function setNPTELBatch(b, btn) {
+            npBatch = b;
+            document.querySelectorAll('#page-nptel-quiz .filter-btn').forEach(x => x.classList.remove('active'));
+            btn.classList.add('active');
+            npData = shuffleArray([...NPTEL_B[b]]);
+            npIdx = 0; npScore = 0; npAnswered = false;
+            document.getElementById('np-result-wrap').style.display = 'none';
+            document.getElementById('nptel-quiz-active').style.display = 'block';
+            renderNPQ();
+        }
 
-        function switchBatch(index) {
-            currentBatchIndex = index;
-            quizData = batches[currentBatchIndex];
-            
-            document.querySelectorAll('.batch-btn').forEach((btn, i) => {
-                btn.classList.toggle('active', i === index);
+        function renderNPQ() {
+            if (npIdx >= npData.length) { showNPResult(); return; }
+            const q = npData[npIdx];
+            document.getElementById('np-qdomain').textContent = q.cat;
+            document.getElementById('np-qtext').textContent = q.q;
+            document.getElementById('np-expl').className = 'explanation';
+            document.getElementById('np-expl').innerHTML = '';
+            document.getElementById('np-next-btn').disabled = true;
+            npAnswered = false;
+            const prog = ((npIdx) / npData.length) * 100;
+            document.getElementById('np-prog').style.width = prog + '%';
+            document.getElementById('np-counter').textContent = (npIdx + 1) + ' / ' + npData.length;
+            document.getElementById('np-score-live').textContent = npScore + ' ✓';
+            const opts = document.getElementById('np-opts');
+            opts.innerHTML = '';
+            const labels = ['A', 'B', 'C', 'D'];
+            q.opts.forEach((o, i) => {
+                const btn = document.createElement('button');
+                btn.className = 'opt';
+                btn.innerHTML = `<span class="opt-label">${labels[i] || i}</span>${o}`;
+                btn.onclick = () => selectNP(i, q.a, q.exp);
+                opts.appendChild(btn);
             });
-
-            resetCurrentBatch();
         }
 
-        function resetCurrentBatch() {
-            currentQuestion = 0;
-            score = 0;
-            answered = false;
-            quizScreen.style.display = 'block';
-            resultScreen.style.display = 'none';
-            nextBtn.textContent = "Next Question";
-            loadQuestion();
-        }
-
-        function loadQuestion() {
-            const data = quizData[currentQuestion];
-            document.getElementById('category').textContent = data.category;
-            document.getElementById('question-index').textContent = `${currentQuestion + 1} / ${quizData.length}`;
-            document.getElementById('question').textContent = data.question;
-            
-            const optionsContainer = document.getElementById('options');
-            optionsContainer.innerHTML = '';
-            
-            data.options.forEach((option, index) => {
-                const div = document.createElement('div');
-                div.className = 'option';
-                div.textContent = option;
-                div.onclick = () => selectOption(index, div);
-                optionsContainer.appendChild(div);
+        function selectNP(chosen, correct, exp) {
+            if (npAnswered) return;
+            npAnswered = true;
+            const opts = document.querySelectorAll('#np-opts .opt');
+            opts.forEach((o, i) => {
+                o.classList.add('locked');
+                if (i === correct) o.classList.add('correct');
+                else if (i === chosen) o.classList.add('wrong');
+                else o.classList.add('dimmed');
             });
-
-            document.getElementById('explanation-card').style.display = 'none';
-            nextBtn.disabled = true;
-            answered = false;
-            
-            const progress = ((currentQuestion) / quizData.length) * 100;
-            progressBar.style.width = `${progress}%`;
+            if (chosen === correct) npScore++;
+            const expl = document.getElementById('np-expl');
+            expl.innerHTML = '<strong>Explanation:</strong> ' + exp;
+            expl.classList.add('show');
+            document.getElementById('np-next-btn').disabled = false;
+            document.getElementById('np-score-live').textContent = npScore + ' ✓';
+            if (npIdx === npData.length - 1) document.getElementById('np-next-btn').textContent = 'See results';
         }
 
-        function selectOption(index, element) {
-            if (answered) return;
-            
-            const data = quizData[currentQuestion];
-            const allOptions = document.querySelectorAll('.option');
-            
-            answered = true;
-            if (index === data.answer) {
-                element.classList.add('correct');
-                score++;
-            } else {
-                element.classList.add('wrong');
-                allOptions[data.answer].classList.add('correct');
-            }
+        function nextNPQ() { npIdx++; renderNPQ(); }
 
-            document.getElementById('explanation-text').textContent = data.explanation;
-            document.getElementById('explanation-card').style.display = 'block';
-            
-            nextBtn.disabled = false;
-            if (currentQuestion === quizData.length - 1) {
-                nextBtn.textContent = "Finish Quiz";
-            }
+        function restartNPTEL() {
+            npIdx = 0; npScore = 0; npAnswered = false;
+            npData = shuffleArray([...NPTEL_B[npBatch]]);
+            document.getElementById('np-result-wrap').style.display = 'none';
+            document.getElementById('nptel-quiz-active').style.display = 'block';
+            document.getElementById('np-next-btn').textContent = 'Next →';
+            renderNPQ();
         }
 
-        nextBtn.onclick = () => {
-            currentQuestion++;
-            if (currentQuestion < quizData.length) {
-                loadQuestion();
-            } else {
-                showResults();
-            }
-        };
-
-        function showResults() {
-            quizScreen.style.display = 'none';
-            resultScreen.style.display = 'block';
-            progressBar.style.width = '100%';
-            document.getElementById('final-score').textContent = score;
-            const total = quizData.length;
-            document.getElementById('total-possible').textContent = `out of ${total}`;
-            
-            const percentage = (score / total) * 100;
-            let msg = "";
-            if (percentage >= 90) msg = "Stellar performance! You're a Data Analytics Sage.";
-            else if (percentage >= 70) msg = "Great job! Your skills are sharp.";
-            else if (percentage >= 50) msg = "Solid foundation. Keep training.";
-            else msg = "The universe is vast. Keep exploring and learning!";
-            
-            document.getElementById('performance-msg').textContent = msg;
+        function showNPResult() {
+            const pct = Math.round((npScore / npData.length) * 100);
+            document.getElementById('np-final-score').textContent = npScore;
+            document.getElementById('np-final-total').textContent = '/ ' + npData.length;
+            let msg, sub;
+            if (pct >= 90) { msg = "Outstanding!"; sub = "Data Analytics mastered."; }
+            else if (pct >= 70) { msg = "Great work!"; sub = "Solid understanding of the material."; }
+            else if (pct >= 50) { msg = "Good effort"; sub = "Review the explanations for misses."; }
+            else { msg = "Keep studying"; sub = "Go through the concepts and retry."; }
+            document.getElementById('np-result-msg').textContent = msg;
+            document.getElementById('np-result-sub').textContent = sub;
+            document.getElementById('nptel-quiz-active').style.display = 'none';
+            document.getElementById('np-result-wrap').style.display = 'block';
+            document.getElementById('np-prog').style.width = '100%';
+            document.getElementById('np-next-btn').textContent = 'Next →';
         }
 
-        loadQuestion();
+        // ─── INIT ─────────────────────────────────────────────────────────────────────
+        awsFiltered = shuffleArray([...AWS_Q]);
+        renderAWSQ();
+        npData = shuffleArray([...NPTEL_B[0]]);
+        renderNPQ();
     </script>
 </body>
+
 </html>
