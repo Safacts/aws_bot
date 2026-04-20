@@ -7,7 +7,6 @@ import {
     BookOpen, 
     Search, 
     ChevronRight, 
-    ListCircle, 
     ArrowUp,
     Hash,
     Menu,
