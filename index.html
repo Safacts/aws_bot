@@ -1066,17 +1066,61 @@
             position: fixed;
             bottom: 24px;
             right: 24px;
-            width: 48px;
-            height: 48px;
+            width: 56px;
+            height: 56px;
             border-radius: 50%;
             background: var(--aws);
             color: white;
             border: none;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            box-shadow: 0 4px 25px rgba(0,0,0,0.4);
             z-index: 1000;
             align-items: center;
             justify-content: center;
             cursor: pointer;
+            transition: 0.2s;
+        }
+        
+        .mobile-toc-toggle:active { transform: scale(0.9); }
+
+        .toc-card {
+            background: rgba(255,153,0,0.05);
+            border: 1px dashed var(--aws);
+            border-radius: var(--r2);
+            padding: 24px;
+            margin-bottom: 32px;
+        }
+
+        .toc-card h4 {
+            margin: 0 0 16px 0;
+            color: var(--aws);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 16px;
+        }
+
+        .toc-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+            gap: 12px;
+        }
+
+        .toc-grid-link {
+            color: var(--text2);
+            text-decoration: none;
+            font-size: 14px;
+            padding: 8px 12px;
+            background: var(--bg3);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            transition: 0.2s;
+            display: block;
+        }
+
+        .toc-grid-link:hover {
+            color: var(--aws);
+            border-color: var(--aws);
+            background: rgba(255,153,0,0.1);
         }
 
         @media(max-width: 900px) {
@@ -1097,6 +1141,7 @@
             .study-sidebar.open { left: 0; box-shadow: 20px 0 50px rgba(0,0,0,0.5); }
             .mobile-toc-toggle { display: flex; }
             .study-content-card { padding: 20px; }
+            .toc-grid { grid-template-columns: 1fr; }
         }
 
         .markdown-body code {
@@ -4162,18 +4207,32 @@
         function generateTOC() {
             const content = document.getElementById('study-content');
             const toc = document.getElementById('study-toc');
-            const headings = content.querySelectorAll('h1, h2, h3');
+            // Select h1, h2, h3
+            const headings = Array.from(content.querySelectorAll('h1, h2, h3'));
             toc.innerHTML = '';
             
+            // Remove any existing TOC card before regenerating
+            const existingCard = content.querySelector('.toc-card');
+            if (existingCard) existingCard.remove();
+
             if (headings.length === 0) {
                 document.getElementById('study-sidebar').style.display = 'none';
                 return;
             }
             document.getElementById('study-sidebar').style.display = 'block';
 
+            // Create In-Content Index Card for H2s (Major Concepts)
+            const tocCard = document.createElement('div');
+            tocCard.className = 'toc-card';
+            tocCard.innerHTML = `<h4><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg> Table of Concepts</h4>`;
+            const tocGrid = document.createElement('div');
+            tocGrid.className = 'toc-grid';
+
             headings.forEach((h, i) => {
                 const id = 'section-' + i;
                 h.id = id;
+                
+                // Sidebar Link
                 const li = document.createElement('li');
                 li.className = 'toc-item';
                 if (h.tagName === 'H3') li.style.paddingLeft = '12px';
@@ -4184,24 +4243,41 @@
                 let prefix = h.tagName === 'H3' ? '└ ' : '• ';
                 if (h.tagName === 'H1') prefix = '';
                 a.innerHTML = `<span>${prefix}</span>${h.innerText.replace(/[^\x00-\x7F]/g, "")}`;
-                a.onclick = (e) => {
+                
+                const scrollFunc = (e) => {
                     e.preventDefault();
                     const topOffset = 100;
                     const elementPosition = h.getBoundingClientRect().top;
                     const offsetPosition = elementPosition + window.pageYOffset - topOffset;
-
-                    window.scrollTo({
-                         top: offsetPosition,
-                         behavior: "smooth"
-                    });
-
-                    if (window.innerWidth <= 900) toggleSidebar();
-                    document.querySelectorAll('.toc-link').forEach(l => l.classList.remove('active'));
+                    window.scrollTo({ top: offsetPosition, behavior: "smooth" });
+                    if (window.innerWidth <= 900) {
+                        const sidebar = document.getElementById('study-sidebar');
+                        if (sidebar.classList.contains('open')) sidebar.classList.remove('open');
+                    }
+                    document.querySelectorAll('.toc-link, .toc-grid-link').forEach(l => l.classList.remove('active'));
                     a.classList.add('active');
                 };
+
+                a.onclick = scrollFunc;
                 li.appendChild(a);
                 toc.appendChild(li);
+
+                // Add to In-Content Grid if it's an H2 (Concept)
+                if (h.tagName === 'H2') {
+                    const gridLink = document.createElement('a');
+                    gridLink.className = 'toc-grid-link';
+                    gridLink.href = '#';
+                    gridLink.textContent = h.innerText.replace(/[^\x00-\x7F]/g, "");
+                    gridLink.onclick = scrollFunc;
+                    tocGrid.appendChild(gridLink);
+                }
             });
+
+            if (tocGrid.children.length > 0) {
+                tocCard.appendChild(tocGrid);
+                // Prepend the TOC card to the content
+                content.insertBefore(tocCard, content.firstChild);
+            }
         }
 
         function renderGuide(md) {
